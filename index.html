@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full bg-black select-none overflow-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUANTUM TV :: GOD MODE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }, colors: { glass: '#0a0a0e', glassBorder: 'rgba(255, 255, 255, 0.08)' } } }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <style>
+        :root { --accent-primary: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.6); --accent-rgb: 59, 130, 246; --accent-gradient: linear-gradient(135deg, rgba(var(--accent-rgb), 0.25) 0%, rgba(16, 185, 129, 0.2) 100%); }
+        body { font-family: 'Inter', sans-serif; background-color: #000000; color: #fff; margin: 0; overflow: hidden; }
+        
+        .glass-panel { background: var(--glass); border: 1px solid var(--glassBorder); border-radius: 20px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9); transform: translateZ(0); }
+        #ui-wrapper { transition: opacity 0.3s ease-out; } .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
+        
+        .is-fullscreen #left-panel, .is-fullscreen #right-panel { display: none !important; }
+        
+        /* Сворачивание панелей */
+        .panel-collapse-left { transform: translateX(calc(-100% - 20px)); }
+        .panel-collapse-right { transform: translateX(calc(100% + 20px)); }
+        .toggle-panel-btn { position: absolute; top: 50%; width: 24px; height: 50px; margin-top: -25px; background: #15151a; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #9ca3af; transition: all 0.3s; z-index: 50; }
+        .toggle-panel-btn:hover { color: #fff; background: rgba(255,255,255,0.2); }
+        .toggle-panel-btn.left-btn { right: -24px; border-radius: 0 8px 8px 0; border-left: none; }
+        .toggle-panel-btn.right-btn { left: -24px; border-radius: 8px 0 0 8px; border-right: none; }
+
+        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+        
+        input[type=range].volume-slider { -webkit-appearance: none; background: transparent; }
+        input[type=range].volume-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: pointer; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); }
+        input[type=range].volume-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+
+        /* Курсор default для ползунка, так как он больше не перематывается */
+        input[type=range].progress-slider { -webkit-appearance: none; background: transparent; width: 100%; position: absolute; top: -5px; left: 0; z-index: 50; cursor: default; }
+        input[type=range].progress-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: default; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); transition: transform 0.1s; }
+        input[type=range].progress-slider:hover::-webkit-slider-thumb { transform: scale(1.3); }
+        input[type=range].progress-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; cursor: default; }
+        
+        .active-station-card { background: var(--accent-gradient); border: 1px solid var(--accent-primary) !important; }
+        @keyframes glowingPulse { 0% { box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3); } 50% { box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.6); transform: scale(1.005); } 100% { box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3); } }
+        .pulsing-active { animation: glowingPulse 2s infinite ease-in-out; z-index: 40; }
+        .station-item:active { transform: scale(0.98); }
+        
+        #stations-list-container { overflow-y: auto; position: relative; scroll-behavior: smooth; } 
+        #stations-list-content { position: absolute; top: 0; left: 0; width: 100%; }
+        .flag-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+        .choices { margin-bottom: 0; }
+        .choices__inner { background-color: #15151a !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 0.75rem !important; padding: 4px 28px 4px 12px !important; min-height: 34px !important; }
+        .choices.is-focused .choices__inner { border-color: var(--accent-primary) !important; }
+        .choices__list--multiple .choices__item { background-color: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-primary); border-radius: 6px; padding: 2px 6px; margin: 2px 4px 2px 0; font-size: 10px; color: #fff; }
+        .choices__list--dropdown, .choices__list[aria-expanded] { background-color: #15151a !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; border-radius: 0.75rem !important; box-shadow: 0 10px 25px rgba(0,0,0,0.9) !important; z-index: 9999 !important; margin-top: 5px; }
+        .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item { color: #fff !important; font-size: 12px !important; padding: 10px 12px !important; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted { background-color: rgba(59, 130, 246, 0.3) !important; color: #fff !important; }
+        .choices__input { background-color: transparent !important; color: #fff !important; font-size: 11px !important; margin-bottom: 0 !important; }
+        .choices__input::placeholder { color: #6b7280 !important; opacity: 1 !important; }
+        .choices__heading { color: #9ca3af !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+        .choices__button { border-left: 1px solid rgba(255,255,255,0.2) !important; opacity: 0.7 !important; }
+        .choices__button:hover { opacity: 1 !important; }
+    </style>
+</head>
+<body class="h-screen w-screen relative overflow-hidden bg-black select-none">
+
+    <div id="globe-container" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></div>
+    
+    <div id="video-container" class="absolute inset-0 w-full h-full z-10 bg-black flex items-center justify-center cursor-pointer" ondblclick="toggleNativeFullscreen()">
+        <div id="video-loading-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black transition-opacity duration-200 pointer-events-none hidden">
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-10 h-10 rounded-full border-4 border-blue-600/30 border-t-blue-500 animate-spin"></div>
+                <span id="loading-text" class="text-blue-400 font-mono text-xs tracking-widest font-bold uppercase animate-pulse">Соединение...</span>
+            </div>
+        </div>
+        <video id="tv-player" class="w-full h-full object-contain bg-black transition-opacity duration-200 opacity-0" autoplay playsinline preload="auto"></video>
+        
+        <!-- Контейнер для переведенных субтитров -->
+        <div id="ai-subtitles-container" class="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-4/5 text-center z-40 pointer-events-none hidden transition-opacity duration-300">
+            <span id="ai-subtitles-text" class="bg-black/75 text-white px-4 py-2 rounded-lg text-sm md:text-lg font-bold shadow-[0_0_15px_rgba(0,0,0,0.9)] backdrop-blur-sm border border-white/10 inline-block">
+                Ожидание перевода...
+            </span>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <div id="ui-wrapper" class="absolute inset-0 w-full h-full z-30 pointer-events-none">
+        
+        <div id="left-panel" class="absolute top-4 left-4 bottom-32 w-80 pointer-events-none flex flex-col gap-4 transition-transform duration-500 z-40">
+            <button class="toggle-panel-btn left-btn pointer-events-auto" onclick="toggleLeftPanel(this)">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+
+            <div class="glass-panel px-5 py-4 flex flex-col gap-3 pointer-events-auto shrink-0 relative">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] shrink-0">
+                        <i data-lucide="tv" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1 flex justify-between items-center">
+                        <div>
+                            <h1 class="text-base font-extrabold tracking-wider text-white flex items-center gap-2">QUANTUM TV</h1>
+                            <p class="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Global TOP Network</p>
+                        </div>
+                        <div id="location-flag-container" class="hidden flex items-center">
+                            <div class="flag-circle" id="current-flag">🌍</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-white/10 flex items-center justify-between">
+                    <div class="flex items-center gap-4 w-full">
+                        <div class="flex flex-col border-r border-white/10 pr-3 flex-1">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Всего потоков</span>
+                            <span id="global-stations-count" class="text-xs font-mono font-extrabold text-blue-400 tracking-wider">0</span> 
+                        </div>
+                        <div class="flex flex-col pl-1 flex-1">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">В текущем топе</span>
+                            <span id="left-stations-count" class="text-xs font-mono font-extrabold text-blue-400 tracking-wider">0</span> 
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="w-full glass-panel flex-1 pointer-events-auto flex flex-col overflow-hidden">
+                <div class="p-4 flex flex-col gap-3 shrink-0 h-full">
+                    
+                    <!-- 1. Регионы (сверху, z-50 для приоритета перекрытия) -->
+                    <div class="flex flex-col gap-2 relative z-50">
+                        <div class="flex justify-between items-center px-1">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">Регион</span>
+                            <button onclick="resetCountries()" class="text-[10px] text-blue-400 hover:text-white transition flex items-center gap-1 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 active:scale-95">
+                                <i data-lucide="globe-2" class="w-3 h-3"></i> Весь мир
+                            </button>
+                        </div>
+                        <select id="filter-country" multiple class="hidden" placeholder="🌍 Поиск стран..."></select>
+                    </div>
+
+                    <!-- 2. Жанры (посередине, z-40) -->
+                    <div class="flex flex-col gap-2 relative z-40">
+                        <select id="filter-genre" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-3 pr-8 py-2 text-xs text-white focus:outline-none hover:border-white/30 cursor-pointer"><option value="">Все категории (Жанры)</option></select>
+                    </div>
+
+                    <!-- 3. Поиск (снизу, z-30) -->
+                    <div class="relative w-full z-30">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+                        <input type="text" id="input-search" placeholder="Мгновенный поиск..." autocomplete="off" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition hover:border-white/30 focus:border-[var(--accent-primary)] mb-2">
+                    </div>
+
+                    <div class="mt-auto flex flex-col gap-2.5 pt-3 border-t border-white/10 z-10">
+                        <button id="btn-fav-mode" class="w-full bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 py-2.5 rounded-xl border border-white/10 flex items-center justify-center gap-2 transition font-medium" onclick="toggleFavoritesMode(this)">
+                            <i data-lucide="heart" class="w-4 h-4 text-red-500"></i> Только избранное
+                        </button>
+                    </div>
+
+                </div>
+            </aside>
+        </div>
+
+        <div id="right-panel" class="absolute top-4 right-4 bottom-32 w-[360px] pointer-events-none flex flex-col md:block hidden transition-transform duration-500 z-40">
+            <button class="toggle-panel-btn right-btn pointer-events-auto" onclick="toggleRightPanel(this)">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+
+            <aside class="w-full glass-panel h-full pointer-events-auto flex flex-col overflow-hidden relative">
+                <div class="p-3 border-b border-white/10 flex items-center justify-between bg-[#0a0a0e] shrink-0">
+                    <h2 class="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-200"><i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i> Топ каналы эфира</h2>
+                </div>
+                <div id="active-station-pinned-container" class="hidden shrink-0 border-b border-white/20 bg-[#15151a] p-2 z-40"></div>
+                
+                <div id="stations-list-container" class="flex-1 relative scroll-smooth p-2">
+                    <div id="stations-list" class="w-full h-full relative overflow-y-auto"><div id="stations-list-content"></div></div>
+                    <div id="list-loader" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-xs gap-2 bg-[#0a0a0e] z-10 text-center p-4">
+                        <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-blue-400"></i> 
+                        <span id="loader-text">Формирование мирового топа...<br>Это займет пару секунд.</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="absolute bottom-4 left-4 right-4 z-40 pointer-events-none transition-all duration-700 max-w-7xl mx-auto">
+            <div class="glass-panel w-full p-4 pointer-events-auto flex flex-col gap-3 shadow-2xl relative mt-2">
+                
+                <!-- Таймеры статуса -->
+                <div id="time-indicator" class="absolute -top-7 left-1 right-1 flex justify-between z-50 pointer-events-none transition-opacity duration-300">
+                    <span id="time-current" class="text-[10px] text-blue-400 font-mono font-bold px-2 py-0.5 rounded bg-black/60 border border-white/10 opacity-0 transition-opacity">LIVE</span>
+                    <span id="time-duration" class="text-[10px] text-gray-400 font-mono font-bold px-2 py-0.5 rounded bg-black/60 border border-white/10 opacity-0 transition-opacity">Прямой эфир</span>
+                </div>
+
+                <!-- Плавающая подсказка "Прямой эфир" над ползунком -->
+                <div id="slider-tooltip" class="absolute -top-6 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded hidden transform -translate-x-1/2 z-[60] pointer-events-none whitespace-nowrap shadow-[0_0_15px_rgba(59,130,246,0.5)]">Прямой эфир (LIVE)</div>
+                
+                <input type="range" id="video-progress" class="progress-slider" min="0" max="100" value="100" step="0.1">
+
+                <div class="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 w-full">
+                    
+                    <div class="w-full md:w-1/3 md:flex-1 flex items-center justify-between md:justify-start gap-3">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="relative group shrink-0">
+                                <img id="player-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E" class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#15151a] border border-white/10 object-cover" alt="Logo">
+                                <button id="btn-fav-current" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center text-gray-400 hover:text-red-500 active:scale-90 transition" onclick="if(currentStation) toggleFavorite(null, currentStation.id)"><i data-lucide="heart" class="w-3 h-3"></i></button>
+                            </div>
+                            <div class="flex flex-col overflow-hidden">
+                                <div class="flex items-center gap-2"><span id="player-title" class="font-bold text-white text-sm truncate">Сбор лучших каналов...</span></div>
+                                <div class="flex items-center gap-2">
+                                    <span id="player-location" class="text-xs text-blue-400 truncate">Ожидание...</span>
+                                    <span id="player-likes" class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-auto flex items-center justify-center gap-2 sm:gap-4 order-3 md:order-none pt-2 md:pt-0 border-t border-white/10 md:border-t-0">
+                        <button id="btn-prev" class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 active:scale-90 transition shrink-0"><i data-lucide="skip-back" class="w-4 h-4 fill-white"></i></button>
+                        <button id="btn-play" class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-600 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-[0_0_15px_var(--accent-glow)] shrink-0"><i data-lucide="play" class="w-4 h-4 md:w-5 md:h-5 fill-white ml-0.5"></i></button>
+                        <button id="btn-next" class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 active:scale-90 transition shrink-0"><i data-lucide="skip-forward" class="w-4 h-4 fill-white"></i></button>
+                    </div>
+
+                    <div class="hidden md:flex md:w-1/3 md:flex-1 items-center justify-end gap-3 min-w-0">
+                        <button id="btn-fullscreen" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-2" onclick="toggleNativeFullscreen()" title="Двойной клик по видео = Fullscreen">
+                            <i data-lucide="maximize" class="w-4 h-4"></i>
+                        </button>
+
+                        <div class="relative z-[9999]">
+                            <button id="btn-settings" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 transition flex items-center" onclick="document.getElementById('settings-menu').classList.toggle('hidden')">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                            
+                            <div id="settings-menu" class="hidden absolute bottom-[calc(100%+20px)] right-0 bg-[#15151a] border border-white/10 rounded-xl p-4 w-60 flex flex-col gap-4 shadow-[0_10px_50px_rgba(0,0,0,0.9)] pointer-events-auto">
+                                
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="monitor-play" class="w-3 h-3"></i> Качество видео</span>
+                                        <span id="current-res-badge" class="text-[9px] font-mono text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">MAX</span>
+                                    </div>
+                                    <select id="quality-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-2 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
+                                        <option value="-1">Авто (Максимальное)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex flex-col gap-2 border-t border-white/10 pt-3">
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Таймер сна</span>
+                                    <select id="sleep-timer-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-2 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center" onchange="setSleepTimer(this.value)">
+                                        <option value="0">Выключен</option>
+                                        <option value="15">15 минут</option>
+                                        <option value="30">30 минут</option>
+                                        <option value="60">1 час</option>
+                                        <option value="120">2 часа</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex items-center justify-between border-t border-white/10 pt-3">
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="message-square" class="w-3 h-3"></i> Субтитры</span>
+                                    <button id="btn-subtitles" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleSubtitles()">
+                                        <div id="sub-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
+                                    </button>
+                                </div>
+
+                                <!-- Блок AI Переводчика -->
+                                <div class="flex flex-col gap-3 border-t border-white/10 pt-3 mt-1">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="languages" class="w-3 h-3"></i> AI Переводчик</span>
+                                    </div>
+                                    
+                                    <select id="ai-lang-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-2 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
+                                        <option value="ru-RU">Русский</option>
+                                        <option value="en-US">English</option>
+                                        <option value="es-ES">Español</option>
+                                        <option value="de-DE">Deutsch</option>
+                                        <option value="zh-CN">中文</option>
+                                        <option value="fr-FR">Français</option>
+                                    </select>
+
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] text-gray-300 font-medium">Показывать текст</span>
+                                        <button id="btn-ai-text" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIText()">
+                                            <div id="ai-text-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] text-gray-300 font-medium">Голосовая озвучка</span>
+                                        <button id="btn-ai-voice" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIVoice()">
+                                            <div id="ai-voice-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 bg-[#15151a] p-2 rounded-xl border border-white/10">
+                            <button class="text-gray-400 hover:text-white transition p-0.5" onclick="toggleMute()"><i data-lucide="volume-2" id="icon-volume-desktop" class="w-4 h-4"></i></button>
+                            <input type="range" id="master-volume-desktop" min="0" max="1" step="0.01" value="0.8" class="w-24 volume-slider">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const COUNTRY_NAMES = {
+            "AF": "Афганистан", "AL": "Албания", "DZ": "Алжир", "AD": "Андорра", "AR": "Аргентина", "AM": "Армения", "AU": "Австралия", "AT": "Австрия", "AZ": "Азербайджан",
+            "BH": "Бахрейн", "BD": "Бангладеш", "BY": "Беларусь", "BE": "Бельгия", "BO": "Боливия", "BA": "Босния и Герцеговина", "BR": "Бразилия", "BG": "Болгария",
+            "CA": "Канада", "CL": "Чили", "CN": "Китай", "CO": "Колумбия", "CR": "Коста-Рика", "HR": "Хорватия", "CU": "Куба", "CY": "Кипр", "CZ": "Чехия",
+            "DK": "Дания", "DO": "Доминиканская Республика", "EC": "Эквадор", "EG": "Египет", "SV": "Сальвадор", "EE": "Эстония", "FI": "Финляндия", "FR": "Франция",
+            "GE": "Грузия", "DE": "Германия", "GR": "Греция", "GT": "Гватемала", "HN": "Гондурас", "HK": "Гонконг", "HU": "Венгрия", "IS": "Исландия", "IN": "Индия",
+            "ID": "Индонезия", "IR": "Иран", "IQ": "Ирак", "IE": "Ирландия", "IL": "Израиль", "IT": "Италия", "JM": "Ямайка", "JP": "Япония", "JO": "Иордания",
+            "KZ": "Казахстан", "KE": "Кения", "KR": "Южная Корея", "KW": "Кувейт", "LV": "Латвия", "LB": "Ливан", "LY": "Ливия", "LT": "Литва", "LU": "Люксембург",
+            "MY": "Малайзия", "MT": "Мальта", "MX": "Мексика", "MD": "Молдова", "MC": "Монако", "ME": "Черногория", "MA": "Марокко", "NL": "Нидерланды", "NZ": "Новая Зеландия",
+            "NI": "Никарагуа", "NG": "Нигерия", "MK": "Северная Македония", "NO": "Норвегия", "OM": "Оман", "PK": "Пакистан", "PA": "Панама", "PY": "Парагвай", "PE": "Перу",
+            "PH": "Филиппины", "PL": "Польша", "PT": "Португалия", "PR": "Пуэрто-Рико", "QA": "Катар", "RO": "Румыния", "RU": "Россия", "SA": "Саудовская Аравия", "RS": "Сербия",
+            "SG": "Сингапур", "SK": "Словакия", "SI": "Словения", "ZA": "ЮАР", "ES": "Испания", "LK": "Шри-Ланка", "SE": "Швеция", "CH": "Швейцария", "SY": "Сирия", "TW": "Тайвань",
+            "TJ": "Таджикистан", "TH": "Таиланд", "TN": "Тунис", "TR": "Турция", "UA": "Украина", "AE": "ОАЭ", "GB": "Великобритания", "US": "США", "UY": "Уругвай", "UZ": "Узбекистан",
+            "VE": "Венесуэла", "VN": "Вьетнам", "YE": "Йемен", "INT": "Международные", "UK": "Великобритания"
+        };
+
+        const TOP_TIER_NETWORKS = [
+            'bbc', 'cnn', 'discovery', 'national geographic', 'eurosport', 'mtv', 'hbo', 'fox', 'bloomberg', 'dw', 'france 24',
+            'первый', 'россия 1', 'нтв', 'тнт', 'стс', 'матч тв', 'культура', 'рен тв', 'пятница',
+            '1+1', 'ictv', 'интер', 'стб', 'новий', 'рада', 'suspilne',
+            'zdf', 'ard', 'rtl', 'sat.1', 'prosieben', 'rai 1', 'tve 1', 'antena 3', 'tf1', 'm6', 'cbs', 'nbc', 'abc'
+        ];
+
+        function getFlagEmoji(countryCode) {
+            if (!countryCode || countryCode === 'INT' || countryCode === 'Global') return '🌍';
+            if (countryCode === 'UK') countryCode = 'GB';
+            const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt());
+            try { return String.fromCodePoint(...codePoints); } catch (e) { return '🌍'; }
+        }
+
+        function formatLikes(num) {
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toString();
+        }
+
+        let stationsData = [], allStationsMaster = [], currentStationIndex = -1, currentStation = null;
+        let isOnlyFavorites = false, lastVolume = 0.8;
+        let choicesInstance = null; 
+        let subtitlesEnabled = false; 
+        let sleepTimerObj = null;
+        
+        let connectTimeout = null;
+
+        let favorites = JSON.parse(localStorage.getItem('quantum_tv_favs') || '[]');
+        let userLikes = JSON.parse(localStorage.getItem('quantum_tv_user_likes') || '{}');
+
+        const YOUTUBE_RESOLUTIONS = [144, 240, 360, 480, 720, 1080, 1440, 2160];
+
+        const SMART_GENRES = {
+            'Общие (General)': { keywords: [] },
+            'Спорт': { keywords: [] },
+            'Детям': { keywords: [] },
+            'Кино и Сериалы': { keywords: [] },
+            'Новости': { keywords: [] },
+            'Музыка': { keywords: [] },
+            'Познавательное': { keywords: [] },
+            'Развлекательное': { keywords: [] },
+            'Для Взрослых (18+)': { keywords: [] }
+        };
+
+        const video = document.getElementById('tv-player');
+        
+        // ГЛОБАЛЬНЫЙ ДВИЖОК HLS
+        let hlsInstance = null;
+        
+        let isPlaying = false, isBuffering = false;            
+        const ITEM_HEIGHT = 65; let scrollTimeout; 
+
+        let scene, camera, renderer, globeGroup;
+        let isUIHidden = false, zenTimer = null, is3DActive = true; 
+        
+        window.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            init3DBackground();
+            setupZenMode(); 
+            setupNetworkListeners(); 
+            setupProgressSlider(); 
+            
+            try {
+                await runClientVacuum(); 
+                setupEvents();
+            } catch (error) { 
+                document.getElementById('list-loader').style.display = 'none'; 
+                showToast("🚨 Ошибка сбора базы. Попробуйте перезагрузить страницу.");
+            }
+            document.getElementById('stations-list').addEventListener('scroll', handleScroll);
+        });
+
+        function setupProgressSlider() {
+            const progressSlider = document.getElementById('video-progress');
+            const timeCurrentEl = document.getElementById('time-current');
+            const timeDurationEl = document.getElementById('time-duration');
+            const tooltip = document.getElementById('slider-tooltip');
+
+            progressSlider.addEventListener('input', (e) => {
+                e.preventDefault();
+                progressSlider.value = 100; 
+            });
+
+            progressSlider.addEventListener('mousemove', (e) => {
+                const rect = progressSlider.getBoundingClientRect();
+                let val = ((e.clientX - rect.left) / rect.width) * 100;
+                val = Math.max(0, Math.min(100, val));
+                tooltip.style.left = `${val}%`;
+                tooltip.classList.remove('hidden');
+            });
+
+            progressSlider.addEventListener('mouseleave', () => { 
+                tooltip.classList.add('hidden'); 
+            });
+
+            video.addEventListener('timeupdate', () => {
+                timeCurrentEl.classList.remove('opacity-0');
+                timeDurationEl.classList.remove('opacity-0');
+                timeCurrentEl.innerText = "LIVE";
+                timeDurationEl.innerText = "Прямой эфир";
+                progressSlider.value = 100;
+                progressSlider.style.background = `linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)`;
+            });
+        }
+
+        function initHlsCore() {
+            if (!Hls.isSupported()) return;
+            
+            hlsInstance = new Hls({ 
+                maxBufferLength: 10,          
+                maxMaxBufferLength: 20, 
+                backBufferLength: 0, 
+                manifestLoadingTimeOut: 1500, 
+                manifestLoadingMaxRetry: 0,   
+                fragLoadingTimeOut: 15000,    
+                fragLoadingMaxRetry: 2, 
+                enableWorker: true, 
+                lowLatencyMode: true, 
+                startFragPrefetch: true,      
+                testBandwidth: false,         
+                startLevel: -1,               
+                abrEwmaDefaultEstimate: 5000000, 
+                capLevelToPlayerSize: true    
+            });
+
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, function(event, data) { 
+                buildQualityScale(data.levels);
+                applySubtitles(); 
+                attemptPlay(); 
+            });
+
+            hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function() {
+                applySubtitles();
+            });
+
+            hlsInstance.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
+                if (hlsInstance.levels[data.level]) {
+                    const h = hlsInstance.levels[data.level].height;
+                    if (h) document.getElementById('current-res-badge').innerText = `${h}p`;
+                }
+            });
+
+            hlsInstance.on(Hls.Events.ERROR, function(event, data) { 
+                if (data.fatal) {
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                        if (!navigator.onLine) {
+                            showToast("⏳ Ждем подключения интернета...");
+                        } else if (data.details === 'manifestLoadError' || data.details === 'manifestLoadTimeOut' || (data.response && data.response.code >= 400)) {
+                            handlePlayError(true); 
+                        } else {
+                            hlsInstance.startLoad();
+                        }
+                    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                        hlsInstance.recoverMediaError();
+                    } else {
+                        handlePlayError(true); 
+                    }
+                }
+            });
+
+            hlsInstance.attachMedia(video);
+            
+            video.addEventListener('playing', () => { 
+                isBuffering = false; updatePlayBtn(); 
+                is3DActive = false; document.getElementById('globe-container').style.display = 'none';
+                clearTimeout(connectTimeout); 
+                resetZenTimer(); hideVideoLoader(); 
+                if (hlsInstance) hlsInstance.startLoad(); 
+            });
+            
+            video.addEventListener('waiting', () => { 
+                isBuffering = true; updatePlayBtn(); 
+                document.getElementById('loading-text').innerText = "Буферизация...";
+            });
+            
+            video.addEventListener('pause', () => { 
+                isBuffering = false; updatePlayBtn(); clearTimeout(zenTimer); toggleUI(true); 
+                is3DActive = true; document.getElementById('globe-container').style.display = 'block';
+                if (hlsInstance) hlsInstance.stopLoad(); 
+            });
+
+            video.textTracks.addEventListener('addtrack', applySubtitles);
+        }
+
+        function setupNetworkListeners() {
+            window.addEventListener('offline', () => {
+                showToast("🚫 Внимание: Разрыв интернет-соединения!");
+                document.getElementById('video-loading-overlay').innerHTML = '<div class="flex flex-col items-center gap-3"><i data-lucide="wifi-off" class="w-10 h-10 text-red-500"></i><span class="text-red-400 font-mono text-xs font-bold uppercase">Сеть недоступна</span></div>';
+                lucide.createIcons();
+                showVideoLoader();
+            });
+            window.addEventListener('online', () => {
+                showToast("✅ Интернет-соединение восстановлено");
+                document.getElementById('loading-text').innerText = "Восстановление...";
+                document.getElementById('video-loading-overlay').innerHTML = '<div class="flex flex-col items-center gap-3"><div class="w-10 h-10 rounded-full border-4 border-blue-600/30 border-t-blue-500 animate-spin"></div><span class="text-blue-400 font-mono text-xs tracking-widest font-bold uppercase animate-pulse">Мгновенный коннект...</span></div>';
+                if(isPlaying) attemptPlay();
+            });
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('btn-fullscreen');
+            if (document.fullscreenElement) {
+                document.body.classList.add('is-fullscreen');
+                if(btn) btn.innerHTML = '<i data-lucide="minimize" class="w-4 h-4"></i>';
+            } else {
+                document.body.classList.remove('is-fullscreen');
+                if(btn) btn.innerHTML = '<i data-lucide="maximize" class="w-4 h-4"></i>';
+            }
+            lucide.createIcons();
+            resetZenTimer(); 
+        });
+
+        function toggleLeftPanel(btn) {
+            const panel = document.getElementById('left-panel');
+            panel.classList.toggle('panel-collapse-left');
+            const isCollapsed = panel.classList.contains('panel-collapse-left');
+            btn.innerHTML = `<i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-left'}" class="w-4 h-4"></i>`;
+            lucide.createIcons();
+        }
+
+        function toggleRightPanel(btn) {
+            const panel = document.getElementById('right-panel');
+            panel.classList.toggle('panel-collapse-right');
+            const isCollapsed = panel.classList.contains('panel-collapse-right');
+            btn.innerHTML = `<i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-left'}" class="w-4 h-4"></i>`;
+            lucide.createIcons();
+        }
+
+        function toggleSubtitles() {
+            subtitlesEnabled = !subtitlesEnabled;
+            const btn = document.getElementById('btn-subtitles'), knob = document.getElementById('sub-knob');
+            if (subtitlesEnabled) { btn.classList.replace('bg-gray-600', 'bg-blue-600'); knob.classList.add('translate-x-4'); } 
+            else { btn.classList.replace('bg-blue-600', 'bg-gray-600'); knob.classList.remove('translate-x-4'); }
+            applySubtitles();
+        }
+
+        function applySubtitles() {
+            if (hlsInstance) { 
+                hlsInstance.subtitleTrack = subtitlesEnabled ? 0 : -1; 
+                hlsInstance.subtitleDisplay = subtitlesEnabled; 
+            } else if (video.textTracks) { 
+                for (let i = 0; i < video.textTracks.length; i++) {
+                    video.textTracks[i].mode = subtitlesEnabled ? 'showing' : 'hidden'; 
+                }
+            }
+        }
+
+        function setSleepTimer(val) {
+            clearTimeout(sleepTimerObj);
+            let mins = parseInt(val);
+            if (mins > 0) {
+                showToast(`🌙 Таймер установлен на ${mins} минут`);
+                sleepTimerObj = setTimeout(() => {
+                    if (isPlaying) togglePlay();
+                    if (document.fullscreenElement) document.exitFullscreen();
+                    showToast("🌙 Воспроизведение остановлено таймером сна");
+                    document.getElementById('sleep-timer-selector').value = "0";
+                }, mins * 60 * 1000);
+            } else { showToast("Таймер сна отключен"); }
+        }
+
+        function showVideoLoader() { document.getElementById('video-loading-overlay').classList.remove('hidden'); video.classList.add('opacity-0'); }
+        function hideVideoLoader() { document.getElementById('video-loading-overlay').classList.add('hidden'); video.classList.remove('opacity-0'); }
+
+        function toggleUI(show) {
+            isUIHidden = !show;
+            const wrapper = document.getElementById('ui-wrapper');
+            if (!show) { wrapper.classList.add('ui-hidden'); document.body.style.cursor = 'none'; } 
+            else { wrapper.classList.remove('ui-hidden'); document.body.style.cursor = 'default'; }
+        }
+
+        function resetZenTimer() {
+            if (isUIHidden) toggleUI(true);
+            clearTimeout(zenTimer);
+            if (isPlaying && !document.activeElement.closest('.choices') && !document.querySelector('.choices.is-open') && !document.activeElement.matches('input, select') && !document.getElementById('settings-menu').classList.contains('hidden') === false) { 
+                zenTimer = setTimeout(() => { toggleUI(false); }, 5000); 
+            }
+        }
+
+        function setupZenMode() {
+            ['mousemove', 'mousedown', 'touchstart', 'touchmove', 'wheel'].forEach(evt => window.addEventListener(evt, resetZenTimer));
+        }
+
+        function toggleNativeFullscreen() {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(()=>{ showToast("⚠ Браузер заблокировал Fullscreen"); }); } 
+            else { document.exitFullscreen().catch(()=>{}); }
+        }
+
+        function attemptPlay() {
+            video.play().catch(e => {
+                if (e.name === 'NotAllowedError') {
+                    isPlaying = false; isBuffering = false; updatePlayBtn(); 
+                    clearTimeout(connectTimeout); 
+                    hideVideoLoader();
+                    showToast("▶ Кликните по экрану или нажмите PLAY");
+                } else if (e.name !== 'AbortError') { 
+                    handlePlayError(false); 
+                }
+            });
+        }
+
+        function selectStation(st) { 
+            if (!st) return;
+            if (currentStation && currentStation.id === st.id && isPlaying) return;
+            
+            prepareStation(st); 
+            
+            document.getElementById('loading-text').innerText = "Проверка сигнала...";
+            showVideoLoader();
+
+            const qSelect = document.getElementById('quality-selector');
+            const resBadge = document.getElementById('current-res-badge');
+            qSelect.innerHTML = '<option value="-1">Авто (Максимальное)</option>';
+            resBadge.innerText = 'MAX';
+            
+            document.getElementById('video-progress').value = 100;
+            document.getElementById('video-progress').style.background = 'linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)';
+
+            clearTimeout(connectTimeout);
+            connectTimeout = setTimeout(() => {
+                if (!isPlaying && isBuffering) {
+                    showToast("🔴 Станция не отвечает. Переключаю...");
+                    handlePlayError(true); 
+                }
+            }, 6000); 
+
+            if (st.url.includes('.m3u8') && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                if (!hlsInstance) initHlsCore();
+                
+                if (hlsInstance.media !== video) hlsInstance.attachMedia(video);
+                
+                hlsInstance.stopLoad();
+                hlsInstance.loadSource(st.url);
+                
+            } else {
+                if(hlsInstance) hlsInstance.detachMedia();
+                video.src = st.url;
+                video.addEventListener('loadedmetadata', function() { 
+                    resBadge.innerText = video.videoHeight ? `${video.videoHeight}p` : 'DIRECT';
+                    applySubtitles(); 
+                    attemptPlay(); 
+                }, {once:true});
+            }
+
+            isBuffering = true; isPlaying = true; updatePlayBtn();
+        }
+
+        function buildQualityScale(levels) {
+            const qSelect = document.getElementById('quality-selector');
+            qSelect.innerHTML = '<option value="-1">Авто (Максимальное)</option>';
+            
+            if (!levels || levels.length <= 1) {
+                qSelect.innerHTML += `<option value="-2" disabled>Оригинал (качество станции)</option>`;
+                return;
+            }
+
+            let mappedLevels = levels.map((lvl, index) => ({...lvl, _index: index}));
+            mappedLevels.sort((a,b) => (b.height || 0) - (a.height || 0));
+
+            mappedLevels.forEach((level) => {
+                let h = level.height;
+                if (!h) return;
+                
+                let closest = YOUTUBE_RESOLUTIONS.reduce((prev, curr) => Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev);
+                
+                let label = `${closest}p`;
+                if (closest >= 1080) label += " (Full HD)";
+                else if (closest >= 720) label += " (HD)";
+                else if (closest <= 240 && closest > 144) label += " (Эконом)";
+                else if (closest === 144) label = "144p (Минимум)";
+                
+                qSelect.innerHTML += `<option value="${level._index}">${label}</option>`;
+            });
+        }
+
+        function togglePlay() { 
+            if (!currentStation && stationsData.length > 0) return selectStation(stationsData[0]); 
+            if (!video.src && !hlsInstance) { if(currentStation) selectStation(currentStation); return; }
+            if (isPlaying) { video.pause(); isPlaying = false; updatePlayBtn(); } 
+            else { isPlaying = true; isBuffering = true; updatePlayBtn(); attemptPlay(); }
+        }
+
+        function handlePlayError(isHardError = false) {
+            if(!navigator.onLine) return; 
+            isPlaying = false; isBuffering = false; updatePlayBtn(); 
+            clearTimeout(connectTimeout); 
+            
+            if (currentStation) {
+                let currentIndex = stationsData.findIndex(s => s.url === currentStation.url);
+                
+                if (isHardError) {
+                    stationsData = stationsData.filter(s => s.url !== currentStation.url);
+                    updateStationCounts(); renderList();
+                }
+                
+                if (stationsData.length > 0) {
+                    let nextIndex = currentIndex !== -1 ? currentIndex : 0;
+                    if (!isHardError && currentIndex !== -1) {
+                        nextIndex = currentIndex + 1;
+                    }
+                    if (nextIndex >= stationsData.length) nextIndex = 0; 
+                    
+                    setTimeout(() => selectStation(stationsData[nextIndex]), 10);
+                } else {
+                    if(hlsInstance) hlsInstance.stopLoad();
+                    video.pause(); video.removeAttribute('src'); video.load();
+                    document.getElementById('player-title').innerText = "Каналы не найдены";
+                    currentStation = null;
+                    hideVideoLoader();
+                }
+            }
+        }
+
+        function updatePlayBtn() { 
+            const btn = document.getElementById('btn-play');
+            if (isBuffering && isPlaying) btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 fill-white animate-spin"></i>`;
+            else if (isPlaying) btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-white"></i>`;
+            else btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-white ml-0.5"></i>`;
+            lucide.createIcons(); 
+        }
+
+        function assignSmartGenres(st, categoriesArr) {
+            st.smartGenre = 'Разное';
+            
+            let cats = [];
+            if (categoriesArr && categoriesArr.length > 0) {
+                cats = categoriesArr.map(c => c.toLowerCase());
+            }
+            const targetText = ((st.name || '') + ' ' + (st.tags || '')).toLowerCase();
+
+            if (cats.includes('xxx') || cats.includes('adult') || targetText.includes('adult') || targetText.includes('18+')) {
+                st.smartGenre = 'Для Взрослых (18+)'; return;
+            }
+            if (cats.includes('kids') || cats.includes('animation') || targetText.includes('kids') || targetText.includes('children') || targetText.includes('мульт') || targetText.includes('детск')) {
+                st.smartGenre = 'Детям'; return;
+            }
+            if (cats.includes('news') || targetText.includes('news') || targetText.includes('новости') || targetText.includes('vesti') || targetText.includes('24')) {
+                st.smartGenre = 'Новости'; return;
+            }
+            if (cats.includes('sports') || targetText.includes('sport') || targetText.includes('спорт') || targetText.includes('match') || targetText.includes('матч') || targetText.includes('боец')) {
+                st.smartGenre = 'Спорт'; return;
+            }
+            if (cats.includes('music') || targetText.includes('music') || targetText.includes('музыка') || targetText.includes('mtv')) {
+                st.smartGenre = 'Музыка'; return;
+            }
+            if (cats.includes('movies') || cats.includes('series') || targetText.includes('movie') || targetText.includes('cinema') || targetText.includes('фильм') || targetText.includes('кино')) {
+                st.smartGenre = 'Кино и Сериалы'; return;
+            }
+            if (cats.includes('documentary') || cats.includes('science') || targetText.includes('nature') || targetText.includes('history') || targetText.includes('наука') || targetText.includes('история') || targetText.includes('discovery')) {
+                st.smartGenre = 'Познавательное'; return;
+            }
+            if (cats.includes('entertainment') || cats.includes('lifestyle') || cats.includes('comedy') || targetText.includes('show') || targetText.includes('шоу')) {
+                st.smartGenre = 'Развлекательное'; return;
+            }
+            if (cats.includes('general') || targetText.includes('general') || targetText.includes('тв') || targetText.includes('tv')) {
+                st.smartGenre = 'Общие (General)'; return;
+            }
+        }
+
+        async function runClientVacuum() {
+            const loader = document.getElementById('list-loader');
+            if(loader) loader.style.display = 'flex';
+            
+            allStationsMaster = [];
+            const uniqueUrls = new Set();
+
+            try {
+                const [channelsRes, streamsRes, logosRes] = await Promise.all([
+                    fetch('https://iptv-org.github.io/api/channels.json').catch(() => ({ json: () => [] })),
+                    fetch('https://iptv-org.github.io/api/streams.json').catch(() => ({ json: () => [] })),
+                    fetch('https://iptv-org.github.io/api/logos.json').catch(() => ({ json: () => [] }))
+                ]);
+                const channels = await channelsRes.json();
+                const streams = await streamsRes.json();
+                const logos = await logosRes.json();
+
+                const channelMap = new Map();
+                channels.forEach(c => channelMap.set(c.id, c));
+
+                const logoMap = new Map();
+                if (Array.isArray(logos)) logos.forEach(l => { if (l.channel && l.url) logoMap.set(l.channel, l.url); });
+
+                const isHostHttps = window.location.protocol === 'https:';
+
+                for (let i = 0; i < streams.length; i++) {
+                    const s = streams[i];
+                    
+                    if (!s.url) continue;
+                    if (s.status === 'error' || s.status === 'timeout' || s.status === 'blocked') continue;
+                    if (isHostHttps && s.url.startsWith('http://')) continue;
+                    if (!s.url.includes('.m3u8')) continue;
+                    
+                    if (uniqueUrls.has(s.url)) continue; 
+
+                    uniqueUrls.add(s.url);
+                    const c = channelMap.get(s.channel) || {};
+                    const finalLogo = logoMap.get(s.channel) || c.logo || '';
+                    
+                    let isHttps = s.url.startsWith('https://');
+                    let chName = c.name || s.channel || 'Без названия';
+                    let nameLower = chName.toLowerCase();
+                    
+                    let cCode = c.country ? c.country.toUpperCase() : null;
+                    
+                    if(c.is_nsfw) c.categories = (c.categories || []).concat(['xxx']);
+
+                    let score = 1000;
+                    if (isHttps) score += 500; 
+                    if (finalLogo) score += 400; 
+                    if (nameLower.includes('hd') || nameLower.includes('1080') || nameLower.includes('4k')) score += 500; 
+                    if (s.status === 'online') score += 1500;
+
+                    let isTopTier = TOP_TIER_NETWORKS.some(net => nameLower.includes(net));
+                    if (isTopTier) score += 3500;
+
+                    let hashLikes = Math.abs((chName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 117) % 7500);
+                    let baseLikes = isTopTier ? 25000 + hashLikes * 8 : Math.floor(score * 4 + hashLikes);
+                    if (userLikes[chName]) baseLikes += userLikes[chName];
+
+                    let obj = {
+                        id: `tv_str_${allStationsMaster.length}`,
+                        name: chName,
+                        country: cCode || 'Global',
+                        countryName: cCode ? (COUNTRY_NAMES[cCode] || cCode) : 'Global',
+                        flag: getFlagEmoji(cCode),
+                        url: s.url,
+                        favicon: finalLogo,
+                        tags: c.categories ? c.categories.join(', ') : '',
+                        score: score,
+                        likes: baseLikes
+                    };
+                    
+                    assignSmartGenres(obj, c.categories); 
+                    if (obj.smartGenre !== 'Для Взрослых (18+)') {
+                        allStationsMaster.push(obj);
+                    }
+                }
+
+                allStationsMaster.sort((a, b) => b.score - a.score || b.likes - a.likes);
+
+                renderInitialCatalogs();
+                updateCatalogsDynamic(); 
+                
+                stationsData = [...allStationsMaster];
+                updateStationCounts();
+                renderList();
+
+                initHlsCore();
+                if (stationsData.length > 0 && !currentStation) {
+                    setTimeout(() => selectStation(stationsData[0]), 50); 
+                }
+
+            } catch (e) {
+                showToast("⚠ Ошибка загрузки базы ТВ. Обновите страницу.");
+            } finally {
+                if(loader) loader.style.display = 'none';
+            }
+        }
+
+        function renderInitialCatalogs() {
+            const sg = document.getElementById('filter-genre');
+            sg.innerHTML = '<option value="">Все категории (Жанры)</option>';
+            Object.keys(SMART_GENRES).forEach(g => { if (g !== 'Для Взрослых (18+)') sg.innerHTML += `<option value="${g}">${g}</option>`; });
+            sg.innerHTML += `<option value="Разное">Разное</option>`;
+        }
+
+        function updateCatalogsDynamic() {
+            const sc = document.getElementById('filter-country');
+            const genre = document.getElementById('filter-genre').value;
+            const q = document.getElementById('input-search').value.toLowerCase().trim();
+            const currentSelected = choicesInstance ? choicesInstance.getValue(true) : [];
+
+            let tempStations = allStationsMaster.filter(st => {
+                const matchGenre = genre ? st.smartGenre === genre : true;
+                const matchQuery = q ? ((st.name || '').toLowerCase().includes(q) || (st.countryName || '').toLowerCase().includes(q) || (st.tags || '').toLowerCase().includes(q)) : true;
+                return matchGenre && matchQuery;
+            });
+
+            const countryDataMap = new Map();
+            tempStations.forEach(st => {
+                if(st.country && st.country !== 'Global') { 
+                    if(!countryDataMap.has(st.country)) countryDataMap.set(st.country, { count: 0, name: st.countryName, flag: st.flag });
+                    countryDataMap.get(st.country).count += 1;
+                }
+            });
+            
+            let tvCountries = [];
+            countryDataMap.forEach((data, code) => { 
+                if (COUNTRY_NAMES[code]) tvCountries.push({ code: code, name: COUNTRY_NAMES[code], count: data.count, flag: data.flag }); 
+            });
+            tvCountries.sort((a,b) => b.count - a.count); 
+
+            if (choicesInstance) { choicesInstance.destroy(); }
+            sc.innerHTML = ''; 
+            
+            let optionsHTML = '';
+            tvCountries.forEach(c => { 
+                let isSelected = currentSelected.includes(c.code) ? 'selected' : '';
+                optionsHTML += `<option value="${c.code}" ${isSelected}>${c.flag} ${c.name} (${c.count})</option>`; 
+            });
+            sc.innerHTML = optionsHTML;
+
+            choicesInstance = new Choices(sc, {
+                removeItemButton: true, searchEnabled: true, searchPlaceholderValue: 'Поиск страны...', placeholderValue: '🌍 Выберите страны...', itemSelectText: '', noResultsText: 'Ничего не найдено', position: 'bottom'
+            });
+
+            sc.addEventListener('change', () => triggerFilterUpdate(null, true));
+        }
+
+        function resetCountries() {
+            if (choicesInstance) { choicesInstance.removeActiveItems(); triggerFilterUpdate(null, true); }
+        }
+
+        let searchDebounce;
+        const triggerFilterUpdate = (e, autoPlay = true) => {
+            if (e && (e.target.id === 'filter-genre' || e.target.id === 'input-search')) updateCatalogsDynamic();
+
+            const selectedCountries = choicesInstance ? choicesInstance.getValue(true) : [];
+            const genre = document.getElementById('filter-genre').value;
+            const q = document.getElementById('input-search').value.toLowerCase().trim();
+
+            const flagContainer = document.getElementById('location-flag-container'), flagEl = document.getElementById('current-flag');
+            if (selectedCountries.length > 0) { flagEl.innerText = getFlagEmoji(selectedCountries[0]); flagContainer.classList.remove('hidden'); } 
+            else { flagContainer.classList.add('hidden'); } 
+
+            stationsData = allStationsMaster.filter(st => {
+                const matchCountry = selectedCountries.length > 0 ? selectedCountries.includes(st.country) : true;
+                const matchGenre = genre ? st.smartGenre === genre : true;
+                const matchQuery = q ? ((st.name || '').toLowerCase().includes(q) || (st.countryName || '').toLowerCase().includes(q) || (st.tags || '').toLowerCase().includes(q)) : true;
+                return matchCountry && matchGenre && matchQuery;
+            });
+
+            stationsData.sort((a, b) => b.score - a.score || b.likes - a.likes);
+
+            updateStationCounts(); renderList(); 
+            document.getElementById('stations-list').scrollTo({top: 0});
+
+            if (autoPlay) {
+                if (stationsData.length > 0) {
+                    selectStation(stationsData[0]); 
+                } else {
+                    if(hlsInstance) { hlsInstance.stopLoad(); }
+                    video.pause(); video.removeAttribute('src'); video.load();
+                    document.getElementById('player-title').innerText = "Каналы не найдены";
+                }
+            }
+        };
+
+        function toggleFavoritesMode(btn) { 
+            isOnlyFavorites = !isOnlyFavorites; btn.classList.toggle('border-red-500'); btn.classList.toggle('text-white'); btn.classList.toggle('bg-red-500/10');
+            filterListsSpecial(); 
+        }
+
+        function filterListsSpecial() {
+            if (isOnlyFavorites) { 
+                stationsData = allStationsMaster.filter(s => favorites.includes(s.id)); stationsData.sort((a, b) => b.score - a.score); showToast("Отображено Избранное"); 
+            } else { triggerFilterUpdate(null, true); return; }
+            updateStationCounts(); renderList();
+            if(stationsData.length > 0) selectStation(stationsData[0]);
+        }
+
+        function updateStationCounts() {
+            document.getElementById('global-stations-count').innerText = allStationsMaster.length.toLocaleString('ru-RU');
+            document.getElementById('left-stations-count').innerText = stationsData.length.toLocaleString('ru-RU'); 
+        }
+
+        function renderList() { 
+            const content = document.getElementById('stations-list-content'); 
+            content.style.height = `${stationsData.length * ITEM_HEIGHT}px`; 
+            renderVisibleItems(); renderPinnedActiveStation(); 
+        }
+
+        function renderPinnedActiveStation() {
+            const container = document.getElementById('active-station-pinned-container'); 
+            if (!currentStation) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden'); 
+            const st = currentStation, isFav = favorites.includes(st.id);
+            const imgSrc = st.favicon || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E`;
+            
+            let descText = [];
+            if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+            if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+            let displayDesc = descText.join(' • ') || 'Live TV';
+
+            container.innerHTML = `<div class="p-2.5 rounded-xl flex items-center gap-3 cursor-pointer pulsing-active bg-blue-600/20 border border-blue-500 w-full relative overflow-hidden shadow-[0_0_20px_var(--accent-glow)]"><div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div><div class="relative shrink-0 z-10"><img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover bg-black/80 border border-white/20" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'"></div><div class="flex flex-col flex-1 overflow-hidden z-10"><div class="flex items-center gap-1.5"><span class="text-sm font-extrabold text-white truncate">${st.name}</span><span class="flex h-2 w-2 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full dynamic-bg bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 dynamic-bg bg-blue-500"></span></span></div><div class="flex items-center gap-2"><span class="text-[10px] text-gray-300 truncate">${displayDesc}</span><span class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div></div><div class="flex flex-col items-end gap-1 shrink-0 z-10"><button class="btn-fav text-gray-300 hover:text-red-500 transition p-1 flex flex-col items-center" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-4 h-4 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div></div>`;
+            lucide.createIcons();
+        }
+
+        function handleScroll() { if (scrollTimeout) cancelAnimationFrame(scrollTimeout); scrollTimeout = requestAnimationFrame(renderVisibleItems); }
+        
+        function renderVisibleItems() {
+            const container = document.getElementById('stations-list'), content = document.getElementById('stations-list-content');
+            if (!container || !content) return;
+            
+            const scrollTop = container.scrollTop, clientHeight = container.clientHeight;
+            const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 10);
+            const endIndex = Math.min(stationsData.length - 1, Math.ceil((scrollTop + clientHeight) / ITEM_HEIGHT) + 10);
+            
+            content.innerHTML = ''; const fragment = document.createDocumentFragment();
+            for (let i = startIndex; i <= endIndex; i++) {
+                const st = stationsData[i]; if (!st) continue;
+                const isPlayingNode = currentStation?.id === st.id, isFav = favorites.includes(st.id);
+                const borderClass = isPlayingNode ? 'active-station-card opacity-50' : 'border-transparent hover:bg-white/5 station-item';
+                const el = document.createElement('div');
+                el.id = `station-card-${st.id}`; el.className = `p-2.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all border ${borderClass} absolute w-full`; el.style.top = `${i * ITEM_HEIGHT}px`; el.style.height = `${ITEM_HEIGHT - 6}px`;
+                
+                const imgSrc = st.favicon ? st.favicon : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E`;
+                
+                let descText = [];
+                if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+                if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+                let displayDesc = descText.join(' • ') || 'Live TV';
+
+                el.innerHTML = `<div class="relative shrink-0"><img src="${imgSrc}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%234b5563\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'" class="w-10 h-10 rounded-lg object-cover bg-[#0a0a0e] border border-white/10" alt="Logo"></div><div class="flex flex-col flex-1 overflow-hidden"><div class="flex items-center justify-between pr-2"><span class="text-xs font-bold text-white truncate">${st.name}</span><span class="text-[9px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div><span class="text-[10px] text-gray-400 truncate mt-0.5">${displayDesc}</span></div><div class="flex flex-col items-end shrink-0 justify-center"><button class="btn-fav text-gray-500 hover:text-red-500 hover:scale-110 transition p-1 flex items-center gap-1" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-3.5 h-3.5 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div>`;
+                el.onclick = (e) => { if (!e.target.closest('.btn-fav')) selectStation(st); }; fragment.appendChild(el);
+            }
+            content.appendChild(fragment); lucide.createIcons();
+        }
+
+        function toggleFavorite(e, stId) { 
+            if (e) e.stopPropagation(); 
+            const st = allStationsMaster.find(s => s.id === stId);
+            if (favorites.includes(stId)) { 
+                favorites = favorites.filter(id => id !== stId); 
+                if (st) st.likes = Math.max(0, st.likes - 1);
+                showToast("Удалено из избранного"); 
+            } else { 
+                favorites.push(stId); 
+                if (st) {
+                    st.likes += 1;
+                    userLikes[st.name] = (userLikes[st.name] || 0) + 1;
+                    localStorage.setItem('quantum_tv_user_likes', JSON.stringify(userLikes));
+                }
+                showToast("Добавлено в избранное ❤️"); 
+            } 
+            localStorage.setItem('quantum_tv_favs', JSON.stringify(favorites)); 
+            updateFavCurrentBtn(); 
+            if (isOnlyFavorites) filterListsSpecial(); else renderList(); 
+        }
+
+        function updateFavCurrentBtn() { 
+            const btn = document.getElementById('btn-fav-current'); 
+            if (!currentStation) return; 
+            btn.innerHTML = `<i data-lucide="heart" class="w-3 h-3 ${favorites.includes(currentStation.id) ? 'text-red-500 fill-red-500' : ''}"></i>`; 
+            lucide.createIcons(); 
+        }
+
+        function prepareStation(st) {
+            currentStation = st; currentStationIndex = stationsData.findIndex(s => s.id === st.id); 
+            
+            document.getElementById('player-title').innerText = st.name; 
+            let descText = [];
+            if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+            if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+            document.getElementById('player-location').innerText = descText.join(' • ') || 'Live TV Stream';
+            document.getElementById('player-likes').innerText = `❤️ ${formatLikes(st.likes)}`;
+            
+            document.getElementById('player-logo').src = st.favicon || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E`;
+            updateFavCurrentBtn(); renderList(); 
+            
+            setTimeout(() => {
+                const container = document.getElementById('stations-list');
+                if (container && currentStationIndex !== -1) {
+                    const targetScroll = currentStationIndex * ITEM_HEIGHT - container.clientHeight / 2 + ITEM_HEIGHT / 2;
+                    container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+                }
+            }, 100);
+        }
+
+        function playNextStation() { if (stationsData.length === 0) return; let idx = currentStation ? stationsData.findIndex(s => s.id === currentStation.id) : -1; let nextIndex = (idx === -1) ? 0 : (idx + 1) % stationsData.length; selectStation(stationsData[nextIndex]); }
+        function playPrevStation() { if (stationsData.length === 0) return; let idx = currentStation ? stationsData.findIndex(s => s.id === currentStation.id) : -1; if (idx === -1 || idx === 0) idx = stationsData.length; let prevIndex = (idx - 1) % stationsData.length; selectStation(stationsData[prevIndex]); }
+        
+        function syncVolume(val) { 
+            lastVolume = parseFloat(val); video.volume = lastVolume; 
+            const iconName = lastVolume == 0 ? 'volume-x' : 'volume-2'; 
+            document.getElementById('icon-volume-desktop').setAttribute('data-lucide', iconName); lucide.createIcons(); 
+        }
+        
+        function toggleMute() { let newVal = video.volume > 0 ? 0 : (lastVolume || 0.8); syncVolume(newVal); document.getElementById('master-volume-desktop').value = newVal; }
+
+        function setupEvents() {
+            document.getElementById('btn-play').onclick = togglePlay; document.getElementById('btn-next').onclick = playNextStation; document.getElementById('btn-prev').onclick = playPrevStation; 
+            document.getElementById('master-volume-desktop').addEventListener('input', e => syncVolume(e.target.value));
+            
+            document.getElementById('filter-genre').addEventListener('change', (e) => triggerFilterUpdate(e, true)); 
+            
+            // ПРИМЕНЕНИЕ ВЫБРАННОГО КАЧЕСТВА ИЗ СПИСКА
+            document.getElementById('quality-selector').addEventListener('change', (e) => {
+                if (hlsInstance) {
+                    hlsInstance.currentLevel = parseInt(e.target.value);
+                }
+            });
+
+            let searchPlayTimeout;
+            document.getElementById('input-search').addEventListener('input', (e) => {
+                clearTimeout(searchDebounce); clearTimeout(searchPlayTimeout);
+                searchDebounce = setTimeout(() => { triggerFilterUpdate(e, false); }, 250);
+                searchPlayTimeout = setTimeout(() => { if(stationsData.length > 0) selectStation(stationsData[0]); }, 800);
+            });
+
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('settings-menu');
+                if (menu && !menu.classList.contains('hidden') && !e.target.closest('#btn-settings') && !e.target.closest('#settings-menu')) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            // Горячие клавиши для управления видео (только громкость и пауза)
+            document.addEventListener('keydown', (e) => {
+                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                
+                switch(e.key) {
+                    case ' ':
+                        e.preventDefault(); resetZenTimer(); togglePlay(); break;
+                    case 'ArrowUp':
+                        e.preventDefault(); resetZenTimer();
+                        let volUp = Math.min(1, video.volume + 0.1); syncVolume(volUp);
+                        document.getElementById('master-volume-desktop').value = volUp; showToast(`🔊 Громкость: ${Math.round(volUp * 100)}%`);
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault(); resetZenTimer();
+                        let volDown = Math.max(0, video.volume - 0.1); syncVolume(volDown);
+                        document.getElementById('master-volume-desktop').value = volDown; showToast(`🔉 Громкость: ${Math.round(volDown * 100)}%`);
+                        break;
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container'), el = document.createElement('div'); el.className = 'bg-[#15151a] border border-blue-500/30 px-4 py-2 rounded-full text-xs text-white shadow-2xl transition-all duration-300 transform translate-y-[-20px] opacity-0 flex items-center gap-2 pointer-events-auto'; el.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-blue-400"></i> ${msg}`; container.appendChild(el); lucide.createIcons(); requestAnimationFrame(() => { el.classList.remove('translate-y-[-20px]', 'opacity-0'); el.classList.add('translate-y-0', 'opacity-100'); }); setTimeout(() => { el.classList.remove('translate-y-0', 'opacity-100'); el.classList.add('translate-y-[-20px]', 'opacity-0'); setTimeout(() => el.remove(), 300); }, 3500);
+        }
+
+        function init3DBackground() {
+            const container = document.getElementById('globe-container'); scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(0, 0, 45); 
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); container.appendChild(renderer.domElement);
+            globeGroup = new THREE.Group(); scene.add(globeGroup);
+            globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(10, 64, 64), new THREE.MeshBasicMaterial({ color: 0x050510, wireframe: true, transparent: true, opacity: 0.2 })));
+            globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(10.2, 64, 64), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, side: THREE.BackSide })));
+            const starsGeo = new THREE.BufferGeometry(), posArray = new Float32Array(1000 * 3); for (let i = 0; i < 1000 * 3; i++) posArray[i] = (Math.random() - 0.5) * 350; starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3)); scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff, transparent: true, opacity: 0.5 })));
+            window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+            function animate() { if (!is3DActive) { requestAnimationFrame(animate); return; } globeGroup.rotation.y += 0.001; globeGroup.rotation.x += 0.0005; renderer.render(scene, camera); requestAnimationFrame(animate); } animate();
+        }
+
+        function setAppHeight() { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); } window.addEventListener('resize', setAppHeight); setAppHeight();
+        
+        // --- AI TRANSLATOR CORE (UPDATED WITH SMART DEMO MOCK) ---
+        let isAITextActive = false;
+        let isAIVoiceActive = false;
+        let originalVolumeBeforeDuck = 0.8;
+        let mockTranslationTimer = null;
+        let mockIndex = 0;
+
+        // Библиотека фраз для симуляции реального эфира
+        const DEMO_TRANSLATIONS = {
+            "ru-RU": ["Прямая трансляция...", "Приветствуем зрителей нашего канала.", "Мы продолжаем следить за событиями.", "Оставайтесь с нами, впереди много интересного."],
+            "en-US": ["Live broadcast...", "Welcome to all our viewers.", "We continue to monitor the events.", "Stay with us, more to come."],
+            "es-ES": ["Transmisión en vivo...", "Damos la bienvenida a nuestros espectadores.", "Seguimos de cerca los acontecimientos.", "Quédate con nosotros, hay más por venir."],
+            "de-DE": ["Live-Übertragung...", "Wir begrüßen unsere Zuschauer.", "Wir verfolgen die Ereignisse weiter.", "Bleiben Sie bei uns, da kommt noch mehr."],
+            "zh-CN": ["现场直播...", "欢迎所有观众。", "我们将继续关注事件的发展。", "请继续关注，精彩还在后面。"],
+            "fr-FR": ["Diffusion en direct...", "Bienvenue à tous nos téléspectateurs.", "Nous continuons de suivre les événements.", "Restez avec nous, la suite arrive."]
+        };
+        
+        function toggleAIText() {
+            isAITextActive = !isAITextActive;
+            const aiSubtitlesContainer = document.getElementById('ai-subtitles-container');
+            const btn = document.getElementById('btn-ai-text'), knob = document.getElementById('ai-text-knob');
+            
+            if (isAITextActive) {
+                btn.classList.replace('bg-gray-600', 'bg-blue-600'); knob.classList.add('translate-x-4');
+                if (aiSubtitlesContainer) aiSubtitlesContainer.classList.remove('hidden');
+                showToast("AI Перевод текста включен");
+                setupSubtitleInterception();
+            } else {
+                btn.classList.replace('bg-blue-600', 'bg-gray-600'); knob.classList.remove('translate-x-4');
+                if (aiSubtitlesContainer) aiSubtitlesContainer.classList.add('hidden');
+                document.getElementById('ai-subtitles-text').innerText = "Ожидание перевода...";
+                showToast("AI Перевод текста выключен");
+                checkAndStopTranslation();
+            }
+        }
+
+        function toggleAIVoice() {
+            isAIVoiceActive = !isAIVoiceActive;
+            const btn = document.getElementById('btn-ai-voice'), knob = document.getElementById('ai-voice-knob');
+            
+            if (isAIVoiceActive) {
+                btn.classList.replace('bg-gray-600', 'bg-blue-600'); knob.classList.add('translate-x-4');
+                showToast("Голосовой AI переводчик активирован");
+                
+                originalVolumeBeforeDuck = video.volume;
+                syncVolume(0.15); 
+                document.getElementById('master-volume-desktop').value = 0.15;
+                
+                setupSubtitleInterception();
+            } else {
+                btn.classList.replace('bg-blue-600', 'bg-gray-600'); knob.classList.remove('translate-x-4');
+                window.speechSynthesis.cancel();
+                
+                syncVolume(originalVolumeBeforeDuck);
+                document.getElementById('master-volume-desktop').value = originalVolumeBeforeDuck;
+                showToast("Голосовой перевод выключен");
+                checkAndStopTranslation();
+            }
+        }
+
+        function checkAndStopTranslation() {
+            if (!isAITextActive && !isAIVoiceActive) {
+                clearInterval(mockTranslationTimer);
+                mockTranslationTimer = null;
+            }
+        }
+
+        function setupSubtitleInterception() {
+            clearInterval(mockTranslationTimer);
+            let hasRealSubtitles = false;
+            
+            if (video.textTracks && video.textTracks.length > 0) {
+                for (let i = 0; i < video.textTracks.length; i++) {
+                    let track = video.textTracks[i];
+                    if (track.kind === 'subtitles' || track.kind === 'captions') {
+                        hasRealSubtitles = true;
+                        track.mode = 'hidden'; 
+                        track.oncuechange = function() {
+                            let activeCues = track.activeCues;
+                            if (activeCues && activeCues.length > 0) {
+                                processAITranslation(activeCues[0].text, true);
+                            }
+                        };
+                    }
+                }
+            }
+
+            // Fallback: Запускаем мок-транслятор, если поток не передает встроенный текст
+            if (!hasRealSubtitles) {
+                const aiSubtitlesText = document.getElementById('ai-subtitles-text');
+                if (isAITextActive && aiSubtitlesText) {
+                    aiSubtitlesText.innerText = "Подключение к аудиопотоку...";
+                }
+                
+                mockTranslationTimer = setInterval(() => {
+                    if (!isAITextActive && !isAIVoiceActive) {
+                        clearInterval(mockTranslationTimer);
+                        return;
+                    }
+                    
+                    // Переводим, только если эфир идёт
+                    if (!video.paused && !isBuffering) {
+                        const targetLang = document.getElementById('ai-lang-selector').value;
+                        const phrases = DEMO_TRANSLATIONS[targetLang] || DEMO_TRANSLATIONS["ru-RU"];
+                        const text = phrases[mockIndex % phrases.length];
+                        
+                        applyTranslationUI(text, targetLang);
+                        mockIndex++;
+                    }
+                }, 5000); // Каждые 5 секунд новая фраза
+            }
+        }
+
+        async function processAITranslation(originalText, isReal = false) {
+            if (!isAITextActive && !isAIVoiceActive) return;
+            const targetLang = document.getElementById('ai-lang-selector').value;
+            const translatedText = isReal ? `[Перевод]: ${originalText}` : originalText; 
+            applyTranslationUI(translatedText, targetLang);
+        }
+
+        function applyTranslationUI(translatedText, targetLang) {
+            const aiSubtitlesText = document.getElementById('ai-subtitles-text');
+            
+            if (isAITextActive && aiSubtitlesText) {
+                aiSubtitlesText.innerText = translatedText;
+            }
+
+            if (isAIVoiceActive) {
+                speakTranslatedText(translatedText, targetLang);
+            }
+        }
+
+        function speakTranslatedText(text, lang) {
+            window.speechSynthesis.cancel(); 
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = 1.05; 
+            utterance.pitch = 1.0;
+            
+            // Динамическое приглушение звука при произношении
+            utterance.onstart = () => { 
+                if (video.volume > 0.3) {
+                    originalVolumeBeforeDuck = video.volume;
+                    syncVolume(0.1); 
+                }
+            };
+            
+            utterance.onend = () => { 
+                if (isAIVoiceActive && video.volume <= 0.1) {
+                    syncVolume(0.15); // Возвращаемся к фоновому уровню режима переводчика
+                }
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Слушаем смену языка "на лету" и применяем в реальном времени
+        document.getElementById('ai-lang-selector').addEventListener('change', () => {
+            if (isAITextActive || isAIVoiceActive) {
+                showToast("Язык перевода изменён");
+            }
+        });
+    </script>
+</body>
+</html>
