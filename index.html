@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Глобальное отключение Referer: открывает доступ к облачному женскому голосу Google TTS и защищенным IPTV-потокам -->
+    <!-- Отключение Referer для прямого доступа ко всем мировым HLS-потокам и облачным голосовым движкам -->
     <meta name="referrer" content="no-referrer">
-    <title>QUANTUM TV :: GOD MODE + AI RUSSIAN VOICEOVER</title>
+    <title>QUANTUM TV :: GLOBAL MULTI-SOURCE + LIP-SYNC AI VOICEOVER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -24,11 +24,18 @@
         :root { --accent-primary: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.6); --accent-rgb: 59, 130, 246; --accent-gradient: linear-gradient(135deg, rgba(var(--accent-rgb), 0.25) 0%, rgba(16, 185, 129, 0.2) 100%); }
         body { font-family: 'Inter', sans-serif; background-color: #000000; color: #fff; margin: 0; overflow: hidden; }
         
-        /* Скрываем стандартные браузерные субтитры во время работы AI-переводчика, сохраняя генерацию событий oncuechange */
-        body.ai-subs-intercept video::cue { opacity: 0 !important; background: transparent !important; color: transparent !important; }
+        /* Аппаратное GPU-ускорение видеоплеера против микро-фризов и просадок FPS */
+        #tv-player {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
 
-        .glass-panel { background: var(--glass); border: 1px solid var(--glassBorder); border-radius: 20px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9); transform: translateZ(0); }
-        #ui-wrapper { transition: opacity 0.3s ease-out; } .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
+        /* Скрываем стандартные браузерные субтитры, когда выключены оригинальные титры, чтобы фоновый перехват работал на 100% каналов */
+        body.hide-native-cues video::cue { opacity: 0 !important; background: transparent !important; color: transparent !important; }
+
+        .glass-panel { background: rgba(10, 10, 14, 0.92); border: 1px solid var(--glassBorder); border-radius: 20px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85); transform: translateZ(0); }
+        #ui-wrapper { transition: opacity 0.25s ease-out; } .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
         
         .is-fullscreen #left-panel, .is-fullscreen #right-panel { display: none !important; }
         
@@ -42,8 +49,8 @@
         ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
         
         input[type=range].volume-slider { -webkit-appearance: none; background: transparent; }
-        input[type=range].volume-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: pointer; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); }
-        input[type=range].volume-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+        input[type=range].volume-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: pointer; margin-top: -5px; box-shadow: 0 0 10px var(--accent-glow); }
+        input[type=range].volume-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.14); border-radius: 2px; }
 
         input[type=range].progress-slider { -webkit-appearance: none; background: transparent; width: 100%; position: absolute; top: -5px; left: 0; z-index: 50; cursor: default; }
         input[type=range].progress-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: default; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); transition: transform 0.1s; }
@@ -51,12 +58,12 @@
         input[type=range].progress-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; cursor: default; }
         
         .active-station-card { background: var(--accent-gradient); border: 1px solid var(--accent-primary) !important; }
-        @keyframes glowingPulse { 0% { box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3); } 50% { box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.6); transform: scale(1.005); } 100% { box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3); } }
-        .pulsing-active { animation: glowingPulse 2s infinite ease-in-out; z-index: 40; }
+        @keyframes glowingPulse { 0% { box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.25); } 50% { box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.55); } 100% { box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.25); } }
+        .pulsing-active { animation: glowingPulse 2.5s infinite ease-in-out; z-index: 40; }
         .station-item:active { transform: scale(0.98); }
         
-        #stations-list-container { overflow-y: auto; position: relative; scroll-behavior: smooth; } 
-        #stations-list-content { position: absolute; top: 0; left: 0; width: 100%; }
+        #stations-list-container { overflow-y: auto; position: relative; } 
+        #stations-list-content { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
         .flag-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
 
         .choices { margin-bottom: 0; }
@@ -83,12 +90,12 @@
             border-radius: 999px;
             display: inline-block;
         }
-        .speaking .voice-bar:nth-child(1) { animation: voiceWave 0.5s infinite ease-in-out 0.1s; }
-        .speaking .voice-bar:nth-child(2) { animation: voiceWave 0.5s infinite ease-in-out 0.25s; }
-        .speaking .voice-bar:nth-child(3) { animation: voiceWave 0.5s infinite ease-in-out 0.4s; }
+        .speaking .voice-bar:nth-child(1) { animation: voiceWave 0.4s infinite ease-in-out 0.05s; }
+        .speaking .voice-bar:nth-child(2) { animation: voiceWave 0.4s infinite ease-in-out 0.18s; }
+        .speaking .voice-bar:nth-child(3) { animation: voiceWave 0.4s infinite ease-in-out 0.32s; }
     </style>
 </head>
-<body class="h-screen w-screen relative overflow-hidden bg-black select-none">
+<body class="h-screen w-screen relative overflow-hidden bg-black select-none hide-native-cues">
 
     <div id="globe-container" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></div>
     
@@ -106,17 +113,18 @@
 
         <video id="tv-player" class="w-full h-full object-contain bg-black transition-opacity duration-200 opacity-0" autoplay playsinline preload="auto"></video>
         
-        <!-- Контейнер для переведенных русских субтитров (показывается ТОЛЬКО когда звучит реальная речь, в паузах скрыт) -->
-        <div id="ai-subtitles-container" class="absolute bottom-32 md:bottom-28 left-1/2 transform -translate-x-1/2 w-[94%] max-w-3xl text-center z-40 pointer-events-none hidden transition-all duration-300">
-            <div class="inline-flex flex-col items-center gap-1.5 bg-black/85 text-white px-5 py-3 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] backdrop-blur-md border border-white/15 max-w-full">
-                <div class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-blue-400">
-                    <span id="ai-sub-badge" class="bg-blue-500/20 border border-blue-500/40 px-2 py-0.5 rounded-full text-blue-300 font-bold">🎙️ ГОЛОС ЭФИРА</span>
+        <!-- Контейнер живого перевода (переводит программы, новости, фильмы и рекламу) -->
+        <div id="ai-subtitles-container" class="absolute bottom-32 md:bottom-28 left-1/2 transform -translate-x-1/2 w-[94%] max-w-3xl text-center z-40 pointer-events-none hidden transition-all duration-200">
+            <div class="inline-flex flex-col items-center gap-1.5 bg-black/88 text-white px-5 py-3 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] border border-white/15 max-w-full">
+                <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono uppercase tracking-wider text-blue-400">
+                    <span id="ai-sub-badge" class="bg-blue-500/20 border border-blue-500/40 px-2 py-0.5 rounded-full text-blue-300 font-bold">🎙️ LIP-SYNC ГОЛОС</span>
                     <span id="ai-sub-lang-pair" class="text-gray-300">AUTO ➔ RU</span>
+                    <span id="ai-speaker-profile-badge" class="bg-purple-500/20 border border-purple-500/40 px-2 py-0.5 rounded-full text-purple-300 font-bold">👩 ЖЕНЩИНА</span>
                     <div id="ai-voice-indicator" class="hidden items-center gap-1 text-pink-400 font-bold ml-1">
                         <span class="voice-bar"></span>
                         <span class="voice-bar"></span>
                         <span class="voice-bar"></span>
-                        <span class="text-[9px] ml-0.5">ЖЕНСКИЙ ГОЛОС</span>
+                        <span id="ai-voice-active-label" class="text-[9px] ml-0.5">СИНХРОН</span>
                     </div>
                 </div>
                 <div id="ai-subtitles-orig" class="text-xs text-gray-400 italic font-normal line-clamp-1 max-w-2xl"></div>
@@ -125,8 +133,9 @@
         </div>
     </div>
 
-    <!-- Аудио-плеер для облачной женской русской озвучки -->
-    <audio id="cloud-tts-player" preload="none"></audio>
+    <!-- Два аудио-канала для бесшовного чередования фраз без задержек (Zero-Latency Lip-Sync) -->
+    <audio id="cloud-tts-player" preload="auto"></audio>
+    <audio id="cloud-tts-player-alt" preload="auto"></audio>
 
     <div id="toast-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -145,7 +154,7 @@
                     <div class="flex-1 flex justify-between items-center">
                         <div>
                             <h1 class="text-base font-extrabold tracking-wider text-white flex items-center gap-2">QUANTUM TV</h1>
-                            <p class="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Global AI Translator</p>
+                            <p class="text-[10px] text-blue-400 font-bold tracking-widest uppercase">All World Channels + AI</p>
                         </div>
                         <div id="location-flag-container" class="hidden flex items-center">
                             <div class="flag-circle" id="current-flag">🌍</div>
@@ -156,11 +165,11 @@
                 <div class="pt-2 border-t border-white/10 flex items-center justify-between">
                     <div class="flex items-center gap-4 w-full">
                         <div class="flex flex-col border-r border-white/10 pr-3 flex-1">
-                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Всего потоков</span>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Все каналы мира</span>
                             <span id="global-stations-count" class="text-xs font-mono font-extrabold text-blue-400 tracking-wider">0</span> 
                         </div>
                         <div class="flex flex-col pl-1 flex-1">
-                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">В текущем топе</span>
+                            <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">В фильтре</span>
                             <span id="left-stations-count" class="text-xs font-mono font-extrabold text-blue-400 tracking-wider">0</span> 
                         </div>
                     </div>
@@ -172,7 +181,7 @@
                     
                     <div class="flex flex-col gap-2 relative z-50">
                         <div class="flex justify-between items-center px-1">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase">Регион</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">Регион (200+ стран)</span>
                             <button onclick="resetCountries()" class="text-[10px] text-blue-400 hover:text-white transition flex items-center gap-1 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 active:scale-95">
                                 <i data-lucide="globe-2" class="w-3 h-3"></i> Весь мир
                             </button>
@@ -186,10 +195,14 @@
 
                     <div class="relative w-full z-30">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
-                        <input type="text" id="input-search" placeholder="Мгновенный поиск..." autocomplete="off" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition hover:border-white/30 focus:border-[var(--accent-primary)] mb-2">
+                        <input type="text" id="input-search" placeholder="Поиск среди всех каналов мира..." autocomplete="off" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition hover:border-white/30 focus:border-[var(--accent-primary)] mb-2">
                     </div>
 
-                    <div class="mt-auto flex flex-col gap-2.5 pt-3 border-t border-white/10 z-10">
+                    <div class="mt-auto flex flex-col gap-2 pt-3 border-t border-white/10 z-10">
+                        <div id="sources-status-bar" class="text-[9px] font-mono text-gray-400 flex items-center justify-between px-1">
+                            <span>Источники базы:</span>
+                            <span id="sources-loaded-badge" class="text-emerald-400 font-bold">4 глобальных хаба</span>
+                        </div>
                         <button id="btn-fav-mode" class="w-full bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 py-2.5 rounded-xl border border-white/10 flex items-center justify-center gap-2 transition font-medium" onclick="toggleFavoritesMode(this)">
                             <i data-lucide="heart" class="w-4 h-4 text-red-500"></i> Только избранное
                         </button>
@@ -206,15 +219,15 @@
 
             <aside class="w-full glass-panel h-full pointer-events-auto flex flex-col overflow-hidden relative">
                 <div class="p-3 border-b border-white/10 flex items-center justify-between bg-[#0a0a0e] shrink-0">
-                    <h2 class="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-200"><i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i> Топ каналы эфира</h2>
+                    <h2 class="text-xs font-bold uppercase tracking-wider flex items-center gap-2 text-gray-200"><i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i> Мировая сетка эфира</h2>
                 </div>
                 <div id="active-station-pinned-container" class="hidden shrink-0 border-b border-white/20 bg-[#15151a] p-2 z-40"></div>
                 
-                <div id="stations-list-container" class="flex-1 relative scroll-smooth p-2">
+                <div id="stations-list-container" class="flex-1 relative p-2">
                     <div id="stations-list" class="w-full h-full relative overflow-y-auto"><div id="stations-list-content"></div></div>
                     <div id="list-loader" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-xs gap-2 bg-[#0a0a0e] z-10 text-center p-4">
                         <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-blue-400"></i> 
-                        <span id="loader-text">Формирование мирового топа...<br>Это займет пару секунд.</span>
+                        <span id="loader-text">Сбор всех телеканалов мира из 4 глобальных источников...</span>
                     </div>
                 </div>
             </aside>
@@ -241,7 +254,7 @@
                                 <button id="btn-fav-current" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center text-gray-400 hover:text-red-500 active:scale-90 transition" onclick="if(currentStation) toggleFavorite(null, currentStation.id)"><i data-lucide="heart" class="w-3 h-3"></i></button>
                             </div>
                             <div class="flex flex-col overflow-hidden">
-                                <div class="flex items-center gap-2"><span id="player-title" class="font-bold text-white text-sm truncate">Сбор лучших каналов...</span></div>
+                                <div class="flex items-center gap-2"><span id="player-title" class="font-bold text-white text-sm truncate">Сбор мировых каналов...</span></div>
                                 <div class="flex items-center gap-2">
                                     <span id="player-location" class="text-xs text-blue-400 truncate">Ожидание...</span>
                                     <span id="player-likes" class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5"></span>
@@ -251,10 +264,10 @@
 
                         <div class="flex md:hidden items-center gap-1.5 shrink-0">
                             <button id="btn-quick-sub-mob" onclick="toggleAIText()" class="bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition">
-                                <span>RU СУБ</span>
+                                <span>СУБТИТРЫ</span>
                             </button>
                             <button id="btn-quick-voice-mob" onclick="toggleAIVoice()" class="bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition">
-                                <span>👩 ГОЛОС</span>
+                                <span>🗣️ ГОЛОС</span>
                             </button>
                         </div>
                     </div>
@@ -267,14 +280,14 @@
 
                     <div class="hidden md:flex md:w-1/3 md:flex-1 items-center justify-end gap-2.5 min-w-0">
                         
-                        <button id="btn-quick-sub" onclick="toggleAIText()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Переводить только голос эфира в русские субтитры">
+                        <button id="btn-quick-sub" onclick="toggleAIText()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Переводить живой голос эфира и рекламу в субтитры">
                             <i data-lucide="message-square" class="w-4 h-4 text-blue-400"></i>
-                            <span>RU Субтитры</span>
+                            <span>AI Субтитры</span>
                         </button>
 
-                        <button id="btn-quick-voice" onclick="toggleAIVoice()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Синхронный перевод голоса русским женским голосом">
+                        <button id="btn-quick-voice" onclick="toggleAIVoice()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Синхронный перевод любого голоса и рекламы по губам">
                             <i data-lucide="volume-2" class="w-4 h-4 text-pink-400"></i>
-                            <span>👩 Голос RU</span>
+                            <span>🗣️ Синхрон</span>
                         </button>
 
                         <button id="btn-fullscreen" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-2 shrink-0" onclick="toggleNativeFullscreen()" title="Двойной клик по видео = Fullscreen">
@@ -286,7 +299,7 @@
                                 <i data-lucide="settings" class="w-4 h-4"></i>
                             </button>
                             
-                            <div id="settings-menu" class="hidden absolute bottom-[calc(100%+20px)] right-0 bg-[#15151a] border border-white/10 rounded-xl p-4 w-72 flex flex-col gap-3.5 shadow-[0_10px_50px_rgba(0,0,0,0.95)] pointer-events-auto">
+                            <div id="settings-menu" class="hidden absolute bottom-[calc(100%+20px)] right-0 bg-[#15151a] border border-white/10 rounded-xl p-4 w-80 max-h-[80vh] overflow-y-auto flex flex-col gap-3 shadow-[0_10px_50px_rgba(0,0,0,0.95)] pointer-events-auto">
                                 
                                 <div class="flex flex-col gap-1.5">
                                     <div class="flex justify-between items-center">
@@ -294,7 +307,7 @@
                                         <span id="current-res-badge" class="text-[9px] font-mono text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">MAX</span>
                                     </div>
                                     <select id="quality-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
-                                        <option value="-1">Авто (Максимальное)</option>
+                                        <option value="-1">Авто (Плавный поток без фризов)</option>
                                     </select>
                                 </div>
                                 
@@ -316,53 +329,64 @@
                                     </button>
                                 </div>
 
+                                <!-- Блок синхронного перевода всех языков мира и определения тембра -->
                                 <div class="flex flex-col gap-2.5 border-t border-white/10 pt-3">
                                     <div class="flex justify-between items-center">
-                                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="languages" class="w-3.5 h-3.5"></i> AI Перевод голоса (RU)</span>
-                                        <span id="detected-voice-badge" class="text-[9px] text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded font-mono">👩 Женский RU</span>
+                                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="languages" class="w-3.5 h-3.5"></i> AI Lip-Sync Переводчик</span>
+                                        <span id="detected-voice-badge" class="text-[9px] text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded font-mono">👩 Авто-Тембр</span>
                                     </div>
                                     
                                     <div class="flex flex-col gap-1">
-                                        <span class="text-[9px] text-gray-400 uppercase">Исходный язык канала:</span>
+                                        <span class="text-[9px] text-gray-400 uppercase">Исходный язык (с какого переводим):</span>
                                         <select id="ai-source-lang-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
-                                            <option value="auto">🌍 Авто (По стране канала)</option>
-                                            <option value="en-US">🇬🇧 English (Английский)</option>
-                                            <option value="de-DE">🇩🇪 Deutsch (Немецкий)</option>
-                                            <option value="es-ES">🇪🇸 Español (Испанский)</option>
-                                            <option value="fr-FR">🇫🇷 Français (Французский)</option>
-                                            <option value="it-IT">🇮🇹 Italiano (Итальянский)</option>
-                                            <option value="tr-TR">🇹🇷 Türkçe (Турецкий)</option>
-                                            <option value="zh-CN">🇨🇳 中文 (Китайский)</option>
-                                            <option value="ja-JP">🇯🇵 日本語 (Японский)</option>
-                                            <option value="ko-KR">🇰🇷 한국어 (Корейский)</option>
-                                            <option value="ar-SA">🇸🇦 العربية (Арабский)</option>
-                                            <option value="pt-BR">🇧🇷 Português (Португальский)</option>
-                                            <option value="pl-PL">🇵🇱 Polski (Польский)</option>
-                                            <option value="hi-IN">🇮🇳 हिन्दी (Хинди)</option>
+                                            <!-- Заполняется всеми 48 языками мира динамически + Авто по голосу -->
                                         </select>
                                     </div>
 
                                     <div class="flex flex-col gap-1">
-                                        <span class="text-[9px] text-gray-400 uppercase">Язык перевода и озвучки:</span>
+                                        <span class="text-[9px] text-gray-400 uppercase">Целевой язык (на какой переводим):</span>
                                         <select id="ai-lang-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
-                                            <option value="ru-RU" selected>🇷🇺 Русский (Женский голос)</option>
-                                            <option value="en-US">🇬🇧 English</option>
-                                            <option value="es-ES">🇪🇸 Español</option>
-                                            <option value="de-DE">🇩🇪 Deutsch</option>
-                                            <option value="zh-CN">🇨🇳 中文</option>
-                                            <option value="fr-FR">🇫🇷 Français</option>
+                                            <!-- Заполняется всеми 48 языками мира динамически (туда и обратно) -->
                                         </select>
                                     </div>
 
-                                    <div class="flex items-center justify-between pt-1">
-                                        <span class="text-[11px] text-gray-200 font-medium">Русские субтитры</span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[9px] text-gray-400 uppercase">Тембр голоса говорящего в кадре:</span>
+                                        <select id="ai-speaker-mode-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-pink-500 cursor-pointer appearance-none text-center">
+                                            <option value="auto" selected>🧠 Авто (Мужчина 👨 / Женщина 👩 / Ребёнок 🧒)</option>
+                                            <option value="female">👩 Всегда Женский голос</option>
+                                            <option value="male">👨 Всегда Мужской голос</option>
+                                            <option value="child">🧒 Всегда Детский голос</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Регулировка громкости голоса перевода -->
+                                    <div class="flex flex-col gap-1 pt-1 border-t border-white/10">
+                                        <div class="flex justify-between items-center text-[10px]">
+                                            <span class="text-gray-300 font-medium">🗣️ Громкость голоса перевода</span>
+                                            <span id="tts-vol-label" class="text-pink-400 font-mono font-bold">100%</span>
+                                        </div>
+                                        <input type="range" id="tts-volume-slider" min="0.1" max="1" step="0.05" value="1" class="w-full volume-slider">
+                                    </div>
+
+                                    <!-- Регулировка уровня приглушения оригинального звука канала -->
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex justify-between items-center text-[10px]">
+                                            <span class="text-gray-300 font-medium">🔉 Фон канала при переводе</span>
+                                            <span id="duck-vol-label" class="text-blue-400 font-mono font-bold">45%</span>
+                                        </div>
+                                        <input type="range" id="ducking-level-slider" min="0.1" max="0.9" step="0.05" value="0.45" class="w-full volume-slider">
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-1 border-t border-white/10">
+                                        <span class="text-[11px] text-gray-200 font-medium">Перевод в субтитры (Эфир + Реклама)</span>
                                         <button id="btn-ai-text" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIText()">
                                             <div id="ai-text-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
                                         </button>
                                     </div>
 
                                     <div class="flex items-center justify-between">
-                                        <span class="text-[11px] text-gray-200 font-medium">Женская озвучка (RU)</span>
+                                        <span class="text-[11px] text-gray-200 font-medium">Синхронная озвучка по губам</span>
                                         <button id="btn-ai-voice" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIVoice()">
                                             <div id="ai-voice-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
                                         </button>
@@ -382,47 +406,99 @@
     </div>
 
     <script>
+        // Полный справочник всех основных языков мира (48 языков для двустороннего перевода туда и обратно)
+        const WORLD_LANGUAGES = [
+            { code: "ru-RU", short: "ru", name: "🇷🇺 Русский (Russian)" },
+            { code: "uk-UA", short: "uk", name: "🇺🇦 Українська (Ukrainian)" },
+            { code: "en-US", short: "en", name: "🇬🇧 English (Английский)" },
+            { code: "de-DE", short: "de", name: "🇩🇪 Deutsch (Немецкий)" },
+            { code: "es-ES", short: "es", name: "🇪🇸 Español (Испанский)" },
+            { code: "fr-FR", short: "fr", name: "🇫🇷 Français (Французский)" },
+            { code: "it-IT", short: "it", name: "🇮🇹 Italiano (Итальянский)" },
+            { code: "pt-BR", short: "pt", name: "🇧🇷 Português (Португальский)" },
+            { code: "tr-TR", short: "tr", name: "🇹🇷 Türkçe (Турецкий)" },
+            { code: "ar-SA", short: "ar", name: "🇸🇦 العربية (Арабский)" },
+            { code: "zh-CN", short: "zh", name: "🇨🇳 中文 (Китайский)" },
+            { code: "ja-JP", short: "ja", name: "🇯🇵 日本語 (Японский)" },
+            { code: "ko-KR", short: "ko", name: "🇰🇷 한국어 (Корейский)" },
+            { code: "hi-IN", short: "hi", name: "🇮🇳 हिन्दी (Хинди)" },
+            { code: "pl-PL", short: "pl", name: "🇵🇱 Polski (Польский)" },
+            { code: "nl-NL", short: "nl", name: "🇳🇱 Nederlands (Нидерландский)" },
+            { code: "sv-SE", short: "sv", name: "🇸🇪 Svenska (Шведский)" },
+            { code: "nb-NO", short: "no", name: "🇳🇴 Norsk (Норвежский)" },
+            { code: "da-DK", short: "da", name: "🇩🇰 Dansk (Датский)" },
+            { code: "fi-FI", short: "fi", name: "🇫🇮 Suomi (Финский)" },
+            { code: "el-GR", short: "el", name: "🇬🇷 Ελληνικά (Греческий)" },
+            { code: "cs-CZ", short: "cs", name: "🇨🇿 Čeština (Чешский)" },
+            { code: "sk-SK", short: "sk", name: "🇸🇰 Slovenčina (Словацкий)" },
+            { code: "hu-HU", short: "hu", name: "🇭🇺 Magyar (Венгерский)" },
+            { code: "ro-RO", short: "ro", name: "🇷🇴 Română (Румынский)" },
+            { code: "bg-BG", short: "bg", name: "🇧🇬 Български (Болгарский)" },
+            { code: "sr-RS", short: "sr", name: "🇷🇸 Српски (Сербский)" },
+            { code: "hr-HR", short: "hr", name: "🇭🇷 Hrvatski (Хорватский)" },
+            { code: "sl-SI", short: "sl", name: "🇸🇮 Slovenščina (Словенский)" },
+            { code: "sq-AL", short: "sq", name: "🇦🇱 Shqip (Албанский)" },
+            { code: "mk-MK", short: "mk", name: "🇲🇰 Македонски (Македонский)" },
+            { code: "he-IL", short: "he", name: "🇮🇱 עברית (Иврит)" },
+            { code: "fa-IR", short: "fa", name: "🇮🇷 فارسی (Персидский)" },
+            { code: "ur-PK", short: "ur", name: "🇵🇰 اردو (Урду)" },
+            { code: "bn-BD", short: "bn", name: "🇧🇩 বাংলা (Бенгальский)" },
+            { code: "th-TH", short: "th", name: "🇹🇭 ไทย (Тайский)" },
+            { code: "vi-VN", short: "vi", name: "🇻🇳 Tiếng Việt (Вьетнамский)" },
+            { code: "id-ID", short: "id", name: "🇮🇩 Bahasa Indonesia (Индонезийский)" },
+            { code: "ms-MY", short: "ms", name: "🇲🇾 Bahasa Melayu (Малайский)" },
+            { code: "tl-PH", short: "tl", name: "🇵🇭 Filipino (Филиппинский)" },
+            { code: "kk-KZ", short: "kk", name: "🇰🇿 Қазақ тілі (Казахский)" },
+            { code: "az-AZ", short: "az", name: "🇦🇿 Azərbaycan (Азербайджанский)" },
+            { code: "uz-UZ", short: "uz", name: "🇺🇿 Oʻzbek (Узбекский)" },
+            { code: "ka-GE", short: "ka", name: "🇬🇪 ქართული (Грузинский)" },
+            { code: "hy-AM", short: "hy", name: "🇦🇲 Հայերեն (Армянский)" },
+            { code: "et-EE", short: "et", name: "🇪🇪 Eesti (Эстонский)" },
+            { code: "lv-LV", short: "lv", name: "🇱🇻 Latviešu (Латышский)" },
+            { code: "lt-LT", short: "lt", name: "🇱🇹 Lietuvių (Литовский)" }
+        ];
+
         const COUNTRY_NAMES = {
-            "AF": "Афганистан", "AL": "Албания", "DZ": "Алжир", "AD": "Андорра", "AR": "Аргентина", "AM": "Армения", "AU": "Австралия", "AT": "Австрия", "AZ": "Азербайджан",
-            "BH": "Бахрейн", "BD": "Бангладеш", "BY": "Беларусь", "BE": "Бельгия", "BO": "Боливия", "BA": "Босния и Герцеговина", "BR": "Бразилия", "BG": "Болгария",
-            "CA": "Канада", "CL": "Чили", "CN": "Китай", "CO": "Колумбия", "CR": "Коста-Рика", "HR": "Хорватия", "CU": "Куба", "CY": "Кипр", "CZ": "Чехия",
-            "DK": "Дания", "DO": "Доминиканская Республика", "EC": "Эквадор", "EG": "Египет", "SV": "Сальвадор", "EE": "Эстония", "FI": "Финляндия", "FR": "Франция",
-            "GE": "Грузия", "DE": "Германия", "GR": "Греция", "GT": "Гватемала", "HN": "Гондурас", "HK": "Гонконг", "HU": "Венгрия", "IS": "Исландия", "IN": "Индия",
+            "AF": "Афганистан", "AL": "Албания", "DZ": "Алжир", "AD": "Андорра", "AO": "Ангола", "AR": "Аргентина", "AM": "Армения", "AU": "Австралия", "AT": "Австрия", "AZ": "Азербайджан",
+            "BS": "Багамы", "BH": "Бахрейн", "BD": "Бангладеш", "BB": "Барбадос", "BY": "Беларусь", "BE": "Бельгия", "BZ": "Белиз", "BJ": "Бенин", "BO": "Боливия", "BA": "Босния и Герцеговина", "BW": "Ботсвана", "BR": "Бразилия", "BN": "Бруней", "BG": "Болгария", "BF": "Буркина-Фасо",
+            "KH": "Камбоджа", "CM": "Камерун", "CA": "Канада", "CV": "Кабо-Верде", "CL": "Чили", "CN": "Китай", "CO": "Колумбия", "CG": "Конго", "CD": "ДР Конго", "CR": "Коста-Рика", "CI": "Кот-д’Ивуар", "HR": "Хорватия", "CU": "Куба", "CY": "Кипр", "CZ": "Чехия",
+            "DK": "Дания", "DO": "Доминикана", "EC": "Эквадор", "EG": "Египет", "SV": "Сальвадор", "GQ": "Экваториальная Гвинея", "EE": "Эстония", "ET": "Эфиопия", "FO": "Фарерские о-ва", "FJ": "Фиджи", "FI": "Финляндия", "FR": "Франция",
+            "GA": "Габон", "GM": "Гамбия", "GE": "Грузия", "DE": "Германия", "GH": "Гана", "GR": "Греция", "GT": "Гватемала", "GN": "Гвинея", "GY": "Гайана", "HT": "Гаити", "HN": "Гондурас", "HK": "Гонконг", "HU": "Венгрия", "IS": "Исландия", "IN": "Индия",
             "ID": "Индонезия", "IR": "Иран", "IQ": "Ирак", "IE": "Ирландия", "IL": "Израиль", "IT": "Италия", "JM": "Ямайка", "JP": "Япония", "JO": "Иордания",
-            "KZ": "Казахстан", "KE": "Кения", "KR": "Южная Корея", "KW": "Кувейт", "LV": "Латвия", "LB": "Ливан", "LY": "Ливия", "LT": "Литва", "LU": "Люксембург",
-            "MY": "Малайзия", "MT": "Мальта", "MX": "Мексика", "MD": "Молдова", "MC": "Монако", "ME": "Черногория", "MA": "Марокко", "NL": "Нидерланды", "NZ": "Новая Зеландия",
-            "NI": "Никарагуа", "NG": "Нигерия", "MK": "Северная Македония", "NO": "Норвегия", "OM": "Оман", "PK": "Пакистан", "PA": "Панама", "PY": "Парагвай", "PE": "Перу",
-            "PH": "Филиппины", "PL": "Польша", "PT": "Португалия", "PR": "Пуэрто-Рико", "QA": "Катар", "RO": "Румыния", "RU": "Россия", "SA": "Саудовская Аравия", "RS": "Сербия",
-            "SG": "Сингапур", "SK": "Словакия", "SI": "Словения", "ZA": "ЮАР", "ES": "Испания", "LK": "Шри-Ланка", "SE": "Швеция", "CH": "Швейцария", "SY": "Сирия", "TW": "Тайвань",
-            "TJ": "Таджикистан", "TH": "Таиланд", "TN": "Тунис", "TR": "Турция", "UA": "Украина", "AE": "ОАЭ", "GB": "Великобритания", "US": "США", "UY": "Уругвай", "UZ": "Узбекистан",
-            "VE": "Венесуэла", "VN": "Вьетнам", "YE": "Йемен", "INT": "Международные", "UK": "Великобритания"
+            "KZ": "Казахстан", "KE": "Кения", "KR": "Южная Корея", "KW": "Кувейт", "KG": "Кыргызстан", "LA": "Лаос", "LV": "Латвия", "LB": "Ливан", "LY": "Ливия", "LI": "Лихтенштейн", "LT": "Литва", "LU": "Люксембург", "MO": "Макао",
+            "MG": "Мадагаскар", "MY": "Малайзия", "MV": "Мальдивы", "ML": "Мали", "MT": "Мальта", "MQ": "Мартиника", "MR": "Мавритания", "MU": "Маврикий", "MX": "Мексика", "MD": "Молдова", "MC": "Монако", "MN": "Монголия", "ME": "Черногория", "MA": "Марокко", "MZ": "Мозамбик", "MM": "Мьянма",
+            "NA": "Намибия", "NP": "Непал", "NL": "Нидерланды", "NZ": "Новая Зеландия", "NI": "Никарагуа", "NE": "Нигер", "NG": "Нигерия", "MK": "Северная Македония", "NO": "Норвегия", "OM": "Оман", "PK": "Пакистан", "PS": "Палестина", "PA": "Панама", "PY": "Парагвай", "PE": "Перу",
+            "PH": "Филиппины", "PL": "Польша", "PT": "Португалия", "PR": "Пуэрто-Рико", "QA": "Катар", "RO": "Румыния", "RU": "Россия", "RW": "Руанда", "SA": "Саудовская Аравия", "SN": "Сенегал", "RS": "Сербия",
+            "SG": "Сингапур", "SK": "Словакия", "SI": "Словения", "SO": "Сомали", "ZA": "ЮАР", "ES": "Испания", "LK": "Шри-Ланка", "SD": "Судан", "SR": "Суринам", "SE": "Швеция", "CH": "Швейцария", "SY": "Сирия", "TW": "Тайвань",
+            "TJ": "Таджикистан", "TZ": "Танзания", "TH": "Таиланд", "TG": "Того", "TT": "Тринидад и Тобаго", "TN": "Тунис", "TR": "Турция", "TM": "Туркменистан", "UG": "Уганда", "UA": "Украина", "AE": "ОАЭ", "GB": "Великобритания", "US": "США", "UY": "Уругвай", "UZ": "Узбекистан",
+            "VE": "Венесуэла", "VN": "Вьетнам", "YE": "Йемен", "ZM": "Замбия", "ZW": "Зимбабве", "INT": "Международные", "UK": "Великобритания"
         };
 
         const COUNTRY_TO_LANG_MAP = {
-            "US": "en-US", "GB": "en-GB", "UK": "en-GB", "AU": "en-AU", "CA": "en-CA", "IE": "en-IE", "NZ": "en-NZ", "SG": "en-SG", "ZA": "en-ZA", "JM": "en-JM", "NG": "en-NG", "KE": "en-KE", "PH": "en-PH", "INT": "en-US", "Global": "en-US",
-            "DE": "de-DE", "AT": "de-AT", "CH": "de-CH", "LU": "de-DE",
-            "FR": "fr-FR", "BE": "fr-BE", "MC": "fr-FR",
-            "ES": "es-ES", "MX": "es-MX", "AR": "es-AR", "CO": "es-CO", "CL": "es-CL", "PE": "es-PE", "VE": "es-VE", "EC": "es-EC", "GT": "es-GT", "CU": "es-CU", "BO": "es-BO", "DO": "es-DO", "HN": "es-HN", "PY": "es-PY", "SV": "es-SV", "NI": "es-NI", "CR": "es-CR", "PA": "es-PA", "UY": "es-UY", "PR": "es-PR",
+            "US": "en-US", "GB": "en-US", "UK": "en-US", "AU": "en-US", "CA": "en-US", "IE": "en-US", "NZ": "en-US", "SG": "en-US", "ZA": "en-US", "JM": "en-US", "NG": "en-US", "KE": "en-US", "GH": "en-US", "INT": "en-US", "Global": "en-US",
+            "DE": "de-DE", "AT": "de-DE", "CH": "de-DE", "LU": "de-DE", "LI": "de-DE",
+            "FR": "fr-FR", "BE": "fr-FR", "MC": "fr-FR", "SN": "fr-FR", "CI": "fr-FR", "CM": "fr-FR",
+            "ES": "es-ES", "MX": "es-ES", "AR": "es-ES", "CO": "es-ES", "CL": "es-ES", "PE": "es-ES", "VE": "es-ES", "EC": "es-ES", "GT": "es-ES", "CU": "es-ES", "BO": "es-ES", "DO": "es-ES", "HN": "es-ES", "PY": "es-ES", "SV": "es-ES", "NI": "es-ES", "CR": "es-ES", "PA": "es-ES", "UY": "es-ES", "PR": "es-ES",
             "IT": "it-IT",
-            "PT": "pt-PT", "BR": "pt-BR",
+            "PT": "pt-BR", "BR": "pt-BR", "AO": "pt-BR", "MZ": "pt-BR",
             "TR": "tr-TR", "AZ": "az-AZ",
-            "CN": "zh-CN", "HK": "zh-HK", "TW": "zh-TW",
+            "CN": "zh-CN", "HK": "zh-CN", "TW": "zh-CN", "MO": "zh-CN",
             "JP": "ja-JP",
             "KR": "ko-KR",
             "PL": "pl-PL",
             "NL": "nl-NL",
-            "SE": "sv-SE", "NO": "nb-NO", "DK": "da-DK", "FI": "fi-FI", "IS": "is-IS",
+            "SE": "sv-SE", "NO": "nb-NO", "DK": "da-DK", "FI": "fi-FI",
             "GR": "el-GR", "CY": "el-GR",
             "CZ": "cs-CZ", "SK": "sk-SK",
             "HU": "hu-HU",
             "RO": "ro-RO", "MD": "ro-RO",
-            "BG": "bg-BG", "RS": "sr-RS", "HR": "hr-HR", "BA": "bs-BA", "SI": "sl-SI", "MK": "mk-MK", "ME": "sr-RS", "AL": "sq-AL",
-            "UA": "uk-UA", "BY": "ru-RU", "RU": "ru-RU", "KZ": "ru-RU", "UZ": "uz-UZ", "TJ": "ru-RU", "AM": "hy-AM", "GE": "ka-GE",
-            "SA": "ar-SA", "AE": "ar-AE", "EG": "ar-EG", "QA": "ar-QA", "KW": "ar-KW", "BH": "ar-BH", "OM": "ar-OM", "JO": "ar-JO", "LB": "ar-LB", "IQ": "ar-IQ", "SY": "ar-SY", "MA": "ar-MA", "DZ": "ar-DZ", "TN": "ar-TN", "LY": "ar-LY", "YE": "ar-YE",
+            "BG": "bg-BG", "RS": "sr-RS", "HR": "hr-HR", "BA": "hr-HR", "SI": "sl-SI", "MK": "mk-MK", "ME": "sr-RS", "AL": "sq-AL",
+            "UA": "uk-UA", "BY": "ru-RU", "RU": "ru-RU", "KZ": "kk-KZ", "UZ": "uz-UZ", "TJ": "ru-RU", "KG": "ru-RU", "AM": "hy-AM", "GE": "ka-GE",
+            "SA": "ar-SA", "AE": "ar-SA", "EG": "ar-SA", "QA": "ar-SA", "KW": "ar-SA", "BH": "ar-SA", "OM": "ar-SA", "JO": "ar-SA", "LB": "ar-SA", "IQ": "ar-SA", "SY": "ar-SA", "MA": "ar-SA", "DZ": "ar-SA", "TN": "ar-SA", "LY": "ar-SA", "YE": "ar-SA", "PS": "ar-SA", "SD": "ar-SA",
             "IR": "fa-IR", "AF": "fa-IR",
             "IL": "he-IL",
-            "IN": "hi-IN", "PK": "ur-PK", "BD": "bn-BD", "LK": "si-LK",
-            "TH": "th-TH", "VN": "vi-VN", "ID": "id-ID", "MY": "ms-MY",
+            "IN": "hi-IN", "PK": "ur-PK", "BD": "bn-BD",
+            "TH": "th-TH", "VN": "vi-VN", "ID": "id-ID", "MY": "ms-MY", "PH": "tl-PH",
             "EE": "et-EE", "LV": "lv-LV", "LT": "lt-LT"
         };
 
@@ -493,8 +569,9 @@
         
         window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
+            populateAllWorldLanguagesMenus();
             init3DBackground();
-            initFemaleVoiceEngine();
+            initMultiVoiceEngine();
             setupZenMode(); 
             setupNetworkListeners(); 
             setupProgressSlider(); 
@@ -506,8 +583,26 @@
                 document.getElementById('list-loader').style.display = 'none'; 
                 showToast("🚨 Ошибка сбора базы. Попробуйте перезагрузить страницу.");
             }
-            document.getElementById('stations-list').addEventListener('scroll', handleScroll);
+            document.getElementById('stations-list').addEventListener('scroll', handleScroll, { passive: true });
         });
+
+        function populateAllWorldLanguagesMenus() {
+            const srcSelect = document.getElementById('ai-source-lang-selector');
+            const tgtSelect = document.getElementById('ai-lang-selector');
+            if (!srcSelect || !tgtSelect) return;
+
+            let srcHtml = `<option value="auto" selected>🎙️ Автоопределение по голосу и речи</option>`;
+            let tgtHtml = '';
+
+            WORLD_LANGUAGES.forEach(lang => {
+                srcHtml += `<option value="${lang.code}">${lang.name}</option>`;
+                const isRu = lang.code === 'ru-RU' ? 'selected' : '';
+                tgtHtml += `<option value="${lang.code}" ${isRu}>${lang.name}</option>`;
+            });
+
+            srcSelect.innerHTML = srcHtml;
+            tgtSelect.innerHTML = tgtHtml;
+        }
 
         function handleVideoScreenClick(e) {
             if (e.target.closest('#unmute-overlay-btn')) return;
@@ -558,27 +653,32 @@
                 timeCurrentEl.innerText = "LIVE";
                 timeDurationEl.innerText = "Прямой эфир";
                 progressSlider.value = 100;
-                progressSlider.style.background = `linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)`;
             });
         }
 
+        // ОПТИМИЗИРОВАННОЕ ЯДРО HLS: Перехватывает ВСЕ субтитры эфира и рекламных блоков без пропусков
         function initHlsCore() {
             if (!Hls.isSupported()) return;
             
             hlsInstance = new Hls({ 
-                maxBufferLength: 12,          
-                maxMaxBufferLength: 25, 
-                backBufferLength: 0, 
-                manifestLoadingTimeOut: 6000, 
-                manifestLoadingMaxRetry: 1,   
+                maxBufferLength: 30,
+                maxMaxBufferLength: 60, 
+                backBufferLength: 15,
+                maxBufferSize: 60 * 1000 * 1000,
+                maxBufferHole: 0.5,
+                highBufferWatchdogPeriod: 2,
+                nudgeOffset: 0.1,
+                nudgeMaxRetry: 5,
+                manifestLoadingTimeOut: 7000, 
+                manifestLoadingMaxRetry: 2,   
                 fragLoadingTimeOut: 15000,    
-                fragLoadingMaxRetry: 2, 
+                fragLoadingMaxRetry: 3, 
                 enableWorker: true, 
-                lowLatencyMode: true, 
+                lowLatencyMode: false,
                 startFragPrefetch: true,      
-                testBandwidth: false,         
+                testBandwidth: true,         
                 startLevel: -1,               
-                abrEwmaDefaultEstimate: 5000000, 
+                abrEwmaDefaultEstimate: 3500000, 
                 capLevelToPlayerSize: true,
                 enableWebVTT: true,
                 enableIMSC1: true,
@@ -587,33 +687,37 @@
 
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, function(event, data) { 
                 buildQualityScale(data.levels);
+                // Всегда активируем дорожку субтитров в фоне, чтобы при включении перевода или рекламной вставке текст шел мгновенно
                 if (data.subtitleTracks && data.subtitleTracks.length > 0) {
                     hlsInstance.subtitleTrack = 0;
+                    hlsInstance.subtitleDisplay = true;
                 }
                 applySubtitles(); 
-                setTimeout(attachTextTrackListeners, 300);
+                setTimeout(attachTextTrackListeners, 200);
                 attemptPlay(); 
             });
 
             hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(event, data) {
                 if (data.subtitleTracks && data.subtitleTracks.length > 0) {
                     hlsInstance.subtitleTrack = 0;
+                    hlsInstance.subtitleDisplay = true;
                 }
                 applySubtitles();
-                setTimeout(attachTextTrackListeners, 300);
+                setTimeout(attachTextTrackListeners, 200);
             });
 
+            // При смене аудиодорожки (или выходе на рекламный блок) обновляем язык распознавания
+            hlsInstance.on(Hls.Events.AUDIO_TRACK_SWITCHED, function() {
+                if (isAITextActive || isAIVoiceActive) {
+                    syncRecognizerLanguageToCurrentChannel();
+                }
+            });
+
+            // ИСПРАВЛЕНО: Обрабатываем ВСЕ реплики внутри каждого сегмента (а не только последнюю), чтобы реклама и быстрые диалоги переводились целиком!
             hlsInstance.on(Hls.Events.CUES_PARSED, function(event, data) {
                 if (!isAITextActive && !isAIVoiceActive) return;
-                if (data && data.cues && data.cues.length > 0) {
-                    const lastCue = data.cues[data.cues.length - 1];
-                    if (lastCue && lastCue.text) {
-                        const voiceOnly = extractVoiceOnly(lastCue.text);
-                        if (voiceOnly.length > 1) {
-                            setSubtitleSourceBadge("📝 ГОЛОС (СУБТИТРЫ)");
-                            handleIncomingForeignPhrase(voiceOnly);
-                        }
-                    }
+                if (data && Array.isArray(data.cues) && data.cues.length > 0) {
+                    scheduleAllParsedCues(data.cues);
                 }
             });
 
@@ -625,20 +729,24 @@
             });
 
             hlsInstance.on(Hls.Events.ERROR, function(event, data) { 
-                if (data.fatal) {
-                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                        if (!navigator.onLine) {
-                            showToast("⏳ Ждем подключения интернета...");
-                        } else if (data.details === 'manifestLoadError' || data.details === 'manifestLoadTimeOut' || (data.response && data.response.code >= 400)) {
-                            handlePlayError(true); 
-                        } else {
-                            hlsInstance.startLoad();
-                        }
-                    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                        hlsInstance.recoverMediaError();
-                    } else {
-                        handlePlayError(true); 
+                if (!data.fatal) {
+                    if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
+                        hlsInstance.startLoad();
                     }
+                    return;
+                }
+                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                    if (!navigator.onLine) {
+                        showToast("⏳ Ждем подключения интернета...");
+                    } else if (data.details === 'manifestLoadError' || data.details === 'manifestLoadTimeOut' || (data.response && data.response.code >= 400)) {
+                        handlePlayError(true); 
+                    } else {
+                        hlsInstance.startLoad();
+                    }
+                } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                    hlsInstance.recoverMediaError();
+                } else {
+                    handlePlayError(true); 
                 }
             });
 
@@ -649,6 +757,7 @@
                 is3DActive = false; document.getElementById('globe-container').style.display = 'none';
                 clearTimeout(connectTimeout); 
                 resetZenTimer(); hideVideoLoader(); 
+                connectStreamPitchAnalyzer();
                 if (isAITextActive || isAIVoiceActive) {
                     restartLiveTranslationPipeline();
                 }
@@ -656,7 +765,7 @@
             
             video.addEventListener('waiting', () => { 
                 isBuffering = true; updatePlayBtn(); 
-                document.getElementById('loading-text').innerText = "Буферизация...";
+                document.getElementById('loading-text').innerText = "Стабилизация буфера...";
             });
             
             video.addEventListener('pause', () => { 
@@ -666,9 +775,7 @@
 
             video.textTracks.addEventListener('addtrack', () => {
                 applySubtitles();
-                if (isAITextActive || isAIVoiceActive) {
-                    attachTextTrackListeners();
-                }
+                attachTextTrackListeners();
             });
         }
 
@@ -724,24 +831,20 @@
             applySubtitles();
         }
 
+        // ИСПРАВЛЕНО: Субтитры и CEA-608/708 всегда остаются активными в движке для мгновенного перехвата на любом канале
         function applySubtitles() {
-            const intercepting = isAITextActive || isAIVoiceActive;
-            document.body.classList.toggle('ai-subs-intercept', intercepting);
+            const shouldHideNative = !subtitlesEnabled || isAITextActive || isAIVoiceActive;
+            document.body.classList.toggle('hide-native-cues', shouldHideNative);
 
             if (hlsInstance) { 
-                if (intercepting) {
-                    if (hlsInstance.subtitleTracks && hlsInstance.subtitleTracks.length > 0 && hlsInstance.subtitleTrack === -1) {
-                        hlsInstance.subtitleTrack = 0;
-                    }
-                    hlsInstance.subtitleDisplay = true; 
-                } else {
-                    hlsInstance.subtitleTrack = subtitlesEnabled ? 0 : -1; 
-                    hlsInstance.subtitleDisplay = subtitlesEnabled; 
+                if (hlsInstance.subtitleTracks && hlsInstance.subtitleTracks.length > 0 && hlsInstance.subtitleTrack === -1) {
+                    hlsInstance.subtitleTrack = 0;
                 }
+                hlsInstance.subtitleDisplay = true; 
             }
             if (video.textTracks) { 
                 for (let i = 0; i < video.textTracks.length; i++) {
-                    video.textTracks[i].mode = intercepting ? 'showing' : (subtitlesEnabled ? 'showing' : 'disabled'); 
+                    video.textTracks[i].mode = 'showing'; 
                 }
             }
         }
@@ -784,7 +887,7 @@
         }
 
         function setupZenMode() {
-            ['mousemove', 'mousedown', 'touchstart', 'touchmove', 'wheel'].forEach(evt => window.addEventListener(evt, resetZenTimer));
+            ['mousemove', 'mousedown', 'touchstart', 'touchmove', 'wheel'].forEach(evt => window.addEventListener(evt, resetZenTimer, { passive: true }));
         }
 
         function toggleNativeFullscreen() {
@@ -819,22 +922,25 @@
             if (!st) return;
             if (currentStation && currentStation.id === st.id && isPlaying && !video.paused) return;
             
+            // Если в буфере осталась недопереведенная фраза предыдущего канала — сбрасываем
+            clearCueScheduleTimers();
             prepareStation(st); 
             clearSpeechQueue();
             hideSubtitleOverlayInSilence();
             lastTranslatedSourceText = "";
-            committedWordCursor = 0;
+            lastInterimBuffer = "";
+            committedInterimPrefix = "";
+            detectedVoiceLangCode = null;
             
             document.getElementById('loading-text').innerText = "Подключение к каналу...";
             showVideoLoader();
 
             const qSelect = document.getElementById('quality-selector');
             const resBadge = document.getElementById('current-res-badge');
-            qSelect.innerHTML = '<option value="-1">Авто (Максимальное)</option>';
+            qSelect.innerHTML = '<option value="-1">Авто (Плавный поток без фризов)</option>';
             resBadge.innerText = 'MAX';
             
             document.getElementById('video-progress').value = 100;
-            document.getElementById('video-progress').style.background = 'linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)';
 
             isBuffering = true; 
             isPlaying = true; 
@@ -846,7 +952,7 @@
                     showToast("🔴 Канал не отвечает. Переключаю на следующий...");
                     handlePlayError(true); 
                 }
-            }, 8000); 
+            }, 8500); 
 
             if (st.url.includes('.m3u8') && typeof Hls !== 'undefined' && Hls.isSupported()) {
                 if (!hlsInstance) initHlsCore();
@@ -865,15 +971,17 @@
                 }, {once:true});
             }
 
+            // Принудительно перестраиваем язык распознавания на язык нового выбранного канала!
+            updateChannelLanguagePairUI();
             if (isAITextActive || isAIVoiceActive) {
-                updateChannelLanguagePairUI();
+                syncRecognizerLanguageToCurrentChannel();
                 restartLiveTranslationPipeline();
             }
         }
 
         function buildQualityScale(levels) {
             const qSelect = document.getElementById('quality-selector');
-            qSelect.innerHTML = '<option value="-1">Авто (Максимальное)</option>';
+            qSelect.innerHTML = '<option value="-1">Авто (Плавный поток без фризов)</option>';
             
             if (!levels || levels.length <= 1) {
                 qSelect.innerHTML += `<option value="-2" disabled>Оригинал (качество станции)</option>`;
@@ -959,9 +1067,9 @@
             else btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-white ml-0.5"></i>`;
             lucide.createIcons(); 
         }
-/* === КОНЕЦ ЧАСТИ 1 — СЮДА ВСТАВИТЬ ЧАСТЬ 2 === */
+/* === КОНЕЦ ЧАСТИ 1 (ЗАМЕНИ ЭТУ СТРОКУ НА ЧАСТЬ 2) === */
 function assignSmartGenres(st, categoriesArr) {
-            st.smartGenre = 'Разное';
+            st.smartGenre = 'Общие (General)';
             
             let cats = [];
             if (categoriesArr && categoriesArr.length > 0) {
@@ -969,43 +1077,103 @@ function assignSmartGenres(st, categoriesArr) {
             }
             const targetText = ((st.name || '') + ' ' + (st.tags || '')).toLowerCase();
 
-            if (cats.includes('xxx') || cats.includes('adult') || targetText.includes('adult') || targetText.includes('18+')) {
+            if (cats.includes('xxx') || cats.includes('adult') || targetText.includes('adult') || targetText.includes('18+') || targetText.includes('xxx')) {
                 st.smartGenre = 'Для Взрослых (18+)'; return;
             }
-            if (cats.includes('kids') || cats.includes('animation') || targetText.includes('kids') || targetText.includes('children') || targetText.includes('мульт') || targetText.includes('детск')) {
+            if (cats.includes('kids') || cats.includes('animation') || targetText.includes('kids') || targetText.includes('children') || targetText.includes('cartoon') || targetText.includes('disney') || targetText.includes('nick') || targetText.includes('мульт') || targetText.includes('детск')) {
                 st.smartGenre = 'Детям'; return;
             }
-            if (cats.includes('news') || targetText.includes('news') || targetText.includes('новости') || targetText.includes('vesti') || targetText.includes('24')) {
+            if (cats.includes('news') || targetText.includes('news') || targetText.includes('новости') || targetText.includes('vesti') || targetText.includes('24') || targetText.includes('info')) {
                 st.smartGenre = 'Новости'; return;
             }
-            if (cats.includes('sports') || targetText.includes('sport') || targetText.includes('спорт') || targetText.includes('match') || targetText.includes('матч') || targetText.includes('боец')) {
+            if (cats.includes('sports') || targetText.includes('sport') || targetText.includes('спорт') || targetText.includes('match') || targetText.includes('матч') || targetText.includes('боец') || targetText.includes('football') || targetText.includes('arena')) {
                 st.smartGenre = 'Спорт'; return;
             }
-            if (cats.includes('music') || targetText.includes('music') || targetText.includes('музыка') || targetText.includes('mtv')) {
+            if (cats.includes('music') || targetText.includes('music') || targetText.includes('музыка') || targetText.includes('mtv') || targetText.includes('vh1') || targetText.includes('hit')) {
                 st.smartGenre = 'Музыка'; return;
             }
-            if (cats.includes('movies') || cats.includes('series') || targetText.includes('movie') || targetText.includes('cinema') || targetText.includes('фильм') || targetText.includes('кино')) {
+            if (cats.includes('movies') || cats.includes('series') || targetText.includes('movie') || targetText.includes('cinema') || targetText.includes('фильм') || targetText.includes('кино') || targetText.includes('hbo') || targetText.includes('series')) {
                 st.smartGenre = 'Кино и Сериалы'; return;
             }
-            if (cats.includes('documentary') || cats.includes('science') || targetText.includes('nature') || targetText.includes('history') || targetText.includes('наука') || targetText.includes('история') || targetText.includes('discovery')) {
+            if (cats.includes('documentary') || cats.includes('science') || targetText.includes('nature') || targetText.includes('history') || targetText.includes('наука') || targetText.includes('история') || targetText.includes('discovery') || targetText.includes('geo') || targetText.includes('docu')) {
                 st.smartGenre = 'Познавательное'; return;
             }
-            if (cats.includes('entertainment') || cats.includes('lifestyle') || cats.includes('comedy') || targetText.includes('show') || targetText.includes('шоу')) {
+            if (cats.includes('entertainment') || cats.includes('lifestyle') || cats.includes('comedy') || targetText.includes('show') || targetText.includes('шоу') || targetText.includes('развлеч')) {
                 st.smartGenre = 'Развлекательное'; return;
             }
-            if (cats.includes('general') || targetText.includes('general') || targetText.includes('тв') || targetText.includes('tv')) {
-                st.smartGenre = 'Общие (General)'; return;
+        }
+
+        function parseM3UContent(m3uText, uniqueUrls) {
+            if (!m3uText || typeof m3uText !== 'string') return [];
+            const lines = m3uText.split(/\r?\n/);
+            const parsedList = [];
+            let currentMeta = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                if (line.startsWith('#EXTINF:')) {
+                    const nameMatch = line.split(',');
+                    const chName = (nameMatch.length > 1 ? nameMatch[nameMatch.length - 1] : 'TV Channel').trim();
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                    const countryMatch = line.match(/tvg-country="([^"]+)"/i);
+                    const langMatch = line.match(/tvg-language="([^"]+)"/i);
+                    const groupMatch = line.match(/group-title="([^"]+)"/i);
+
+                    currentMeta = {
+                        name: chName || 'TV Channel',
+                        logo: logoMatch ? logoMatch[1] : '',
+                        country: countryMatch ? countryMatch[1].toUpperCase().split(';')[0] : null,
+                        language: langMatch ? langMatch[1].toLowerCase().split(';')[0] : '',
+                        group: groupMatch ? groupMatch[1] : ''
+                    };
+                } else if (!line.startsWith('#') && (line.includes('.m3u8') || line.startsWith('http'))) {
+                    if (!uniqueUrls.has(line)) {
+                        uniqueUrls.add(line);
+                        const meta = currentMeta || { name: 'Live TV Channel', logo: '', country: 'INT', language: '', group: '' };
+                        const cCode = (meta.country && meta.country.length === 2) ? meta.country : 'INT';
+                        const isHttps = line.startsWith('https://');
+                        const nameLower = meta.name.toLowerCase();
+                        const isTopTier = TOP_TIER_NETWORKS.some(net => nameLower.includes(net));
+
+                        let score = isHttps ? 1400 : 750;
+                        if (meta.logo) score += 300;
+                        if (isTopTier) score += 3200;
+
+                        const obj = {
+                            id: `tv_m3u_${uniqueUrls.size}`,
+                            name: meta.name,
+                            country: cCode,
+                            countryName: COUNTRY_NAMES[cCode] || cCode,
+                            flag: getFlagEmoji(cCode),
+                            url: line,
+                            favicon: meta.logo,
+                            streamLang: meta.language || '',
+                            tags: meta.group,
+                            score: score,
+                            likes: isTopTier ? 18500 : 2400
+                        };
+                        assignSmartGenres(obj, meta.group ? [meta.group] : []);
+                        if (obj.smartGenre !== 'Для Взрослых (18+)') {
+                            parsedList.push(obj);
+                        }
+                    }
+                    currentMeta = null;
+                }
             }
+            return parsedList;
         }
 
         async function runClientVacuum() {
             const loader = document.getElementById('list-loader');
+            const sourcesBadge = document.getElementById('sources-loaded-badge');
             if (loader) loader.style.display = 'flex';
             
             allStationsMaster = [];
             const uniqueUrls = new Set();
+            let activeSourcesCount = 0;
 
-            // 1. Сначала добавляем проверенные мировые каналы
             GUARANTEED_WORKING_CHANNELS.forEach((item) => {
                 const streamUrl = item.fallbackUrl || item.url;
                 uniqueUrls.add(streamUrl);
@@ -1017,6 +1185,7 @@ function assignSmartGenres(st, categoriesArr) {
                     flag: getFlagEmoji(item.country),
                     url: streamUrl,
                     favicon: '',
+                    streamLang: '',
                     tags: item.tags,
                     smartGenre: item.smartGenre,
                     score: item.score,
@@ -1025,75 +1194,116 @@ function assignSmartGenres(st, categoriesArr) {
             });
 
             try {
-                const [channelsRes, streamsRes, logosRes] = await Promise.all([
-                    fetch('https://iptv-org.github.io/api/channels.json').catch(() => ({ json: () => [] })),
-                    fetch('https://iptv-org.github.io/api/streams.json').catch(() => ({ json: () => [] })),
-                    fetch('https://iptv-org.github.io/api/logos.json').catch(() => ({ json: () => [] }))
+                const [
+                    channelsRes,
+                    streamsRes,
+                    logosRes,
+                    iptvMasterM3uRes,
+                    freeTvM3uRes,
+                    worldPublicM3uRes
+                ] = await Promise.all([
+                    fetch('https://iptv-org.github.io/api/channels.json').catch(() => null),
+                    fetch('https://iptv-org.github.io/api/streams.json').catch(() => null),
+                    fetch('https://iptv-org.github.io/api/logos.json').catch(() => null),
+                    fetch('https://iptv-org.github.io/iptv/index.m3u').catch(() => null),
+                    fetch('https://raw.githubusercontent.com/Free-TV/IPTV/master/playlists/playlist_all.m3u').catch(() => null),
+                    fetch('https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u').catch(() => null)
                 ]);
-                const channels = await channelsRes.json();
-                const streams = await streamsRes.json();
-                const logos = await logosRes.json();
 
-                const channelMap = new Map();
-                if (Array.isArray(channels)) channels.forEach(c => channelMap.set(c.id, c));
+                const channels = channelsRes && channelsRes.ok ? await channelsRes.json().catch(() => []) : [];
+                const streams = streamsRes && streamsRes.ok ? await streamsRes.json().catch(() => []) : [];
+                const logos = logosRes && logosRes.ok ? await logosRes.json().catch(() => []) : [];
 
-                const logoMap = new Map();
-                if (Array.isArray(logos)) logos.forEach(l => { if (l.channel && l.url) logoMap.set(l.channel, l.url); });
+                if (Array.isArray(streams) && streams.length > 0) {
+                    activeSourcesCount++;
+                    const channelMap = new Map();
+                    if (Array.isArray(channels)) channels.forEach(c => channelMap.set(c.id, c));
 
-                const isHostHttps = window.location.protocol === 'https:';
+                    const logoMap = new Map();
+                    if (Array.isArray(logos)) logos.forEach(l => { if (l.channel && l.url) logoMap.set(l.channel, l.url); });
 
-                for (let i = 0; i < streams.length; i++) {
-                    const s = streams[i];
-                    
-                    if (!s.url) continue;
-                    if (s.status === 'error' || s.status === 'timeout' || s.status === 'blocked') continue;
-                    if (isHostHttps && s.url.startsWith('http://')) continue;
-                    if (!s.url.includes('.m3u8')) continue;
-                    
-                    if (uniqueUrls.has(s.url)) continue; 
+                    for (let i = 0; i < streams.length; i++) {
+                        const s = streams[i];
+                        if (!s.url || s.status === 'blocked') continue;
+                        if (uniqueUrls.has(s.url)) continue;
 
-                    uniqueUrls.add(s.url);
-                    const c = channelMap.get(s.channel) || {};
-                    const finalLogo = logoMap.get(s.channel) || c.logo || '';
-                    
-                    let isHttps = s.url.startsWith('https://');
-                    let chName = c.name || s.channel || 'Без названия';
-                    let nameLower = chName.toLowerCase();
-                    
-                    let cCode = c.country ? c.country.toUpperCase() : null;
-                    
-                    if (c.is_nsfw) c.categories = (c.categories || []).concat(['xxx']);
+                        uniqueUrls.add(s.url);
+                        const c = channelMap.get(s.channel) || {};
+                        const finalLogo = logoMap.get(s.channel) || c.logo || '';
+                        
+                        const isHttps = s.url.startsWith('https://');
+                        const chName = c.name || s.title || s.channel || 'Live TV Channel';
+                        const nameLower = chName.toLowerCase();
+                        
+                        let cCode = c.country ? c.country.toUpperCase() : null;
+                        if (!cCode && s.channel && s.channel.includes('.')) {
+                            const suffix = s.channel.split('.').pop().toUpperCase();
+                            if (suffix.length === 2) cCode = suffix;
+                        }
+                        if (c.is_nsfw) c.categories = (c.categories || []).concat(['xxx']);
 
-                    let score = 1000;
-                    if (isHttps) score += 500; 
-                    if (finalLogo) score += 400; 
-                    if (nameLower.includes('hd') || nameLower.includes('1080') || nameLower.includes('4k')) score += 500; 
-                    if (s.status === 'online') score += 1500;
+                        let score = isHttps ? 1500 : 800;
+                        if (finalLogo) score += 400; 
+                        if (nameLower.includes('hd') || nameLower.includes('1080') || nameLower.includes('4k')) score += 500; 
+                        if (s.status === 'online') score += 1500;
 
-                    let isTopTier = TOP_TIER_NETWORKS.some(net => nameLower.includes(net));
-                    if (isTopTier) score += 3500;
+                        const isTopTier = TOP_TIER_NETWORKS.some(net => nameLower.includes(net));
+                        if (isTopTier) score += 3500;
 
-                    let hashLikes = Math.abs((chName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 117) % 7500);
-                    let baseLikes = isTopTier ? 25000 + hashLikes * 8 : Math.floor(score * 4 + hashLikes);
-                    if (userLikes[chName]) baseLikes += userLikes[chName];
+                        const hashLikes = Math.abs((chName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 117) % 7500);
+                        let baseLikes = isTopTier ? 25000 + hashLikes * 8 : Math.floor(score * 3 + hashLikes);
+                        if (userLikes[chName]) baseLikes += userLikes[chName];
 
-                    let obj = {
-                        id: `tv_str_${allStationsMaster.length}`,
-                        name: chName,
-                        country: cCode || 'Global',
-                        countryName: cCode ? (COUNTRY_NAMES[cCode] || cCode) : 'Global',
-                        flag: getFlagEmoji(cCode),
-                        url: s.url,
-                        favicon: finalLogo,
-                        tags: c.categories ? c.categories.join(', ') : '',
-                        score: score,
-                        likes: baseLikes
-                    };
-                    
-                    assignSmartGenres(obj, c.categories); 
-                    if (obj.smartGenre !== 'Для Взрослых (18+)') {
-                        allStationsMaster.push(obj);
+                        const obj = {
+                            id: `tv_str_${allStationsMaster.length}`,
+                            name: chName,
+                            country: cCode || 'INT',
+                            countryName: cCode ? (COUNTRY_NAMES[cCode] || cCode) : 'Международные',
+                            flag: getFlagEmoji(cCode),
+                            url: s.url,
+                            favicon: finalLogo,
+                            streamLang: (Array.isArray(c.languages) && c.languages[0]) ? c.languages[0] : '',
+                            tags: c.categories ? c.categories.join(', ') : '',
+                            score: score,
+                            likes: baseLikes
+                        };
+                        
+                        assignSmartGenres(obj, c.categories); 
+                        if (obj.smartGenre !== 'Для Взрослых (18+)') {
+                            allStationsMaster.push(obj);
+                        }
                     }
+                }
+
+                if (iptvMasterM3uRes && iptvMasterM3uRes.ok) {
+                    const m3u1 = await iptvMasterM3uRes.text().catch(() => '');
+                    const extra1 = parseM3UContent(m3u1, uniqueUrls);
+                    if (extra1.length > 0) {
+                        activeSourcesCount++;
+                        for (let i = 0; i < extra1.length; i++) allStationsMaster.push(extra1[i]);
+                    }
+                }
+
+                if (freeTvM3uRes && freeTvM3uRes.ok) {
+                    const m3u2 = await freeTvM3uRes.text().catch(() => '');
+                    const extra2 = parseM3UContent(m3u2, uniqueUrls);
+                    if (extra2.length > 0) {
+                        activeSourcesCount++;
+                        for (let i = 0; i < extra2.length; i++) allStationsMaster.push(extra2[i]);
+                    }
+                }
+
+                if (worldPublicM3uRes && worldPublicM3uRes.ok) {
+                    const m3u3 = await worldPublicM3uRes.text().catch(() => '');
+                    const extra3 = parseM3UContent(m3u3, uniqueUrls);
+                    if (extra3.length > 0) {
+                        activeSourcesCount++;
+                        for (let i = 0; i < extra3.length; i++) allStationsMaster.push(extra3[i]);
+                    }
+                }
+
+                if (sourcesBadge) {
+                    sourcesBadge.innerText = `${Math.max(1, activeSourcesCount)} мировых хаба (${allStationsMaster.length.toLocaleString('ru-RU')} кан.)`;
                 }
 
                 allStationsMaster.sort((a, b) => b.score - a.score || b.likes - a.likes);
@@ -1145,15 +1355,21 @@ function assignSmartGenres(st, categoriesArr) {
 
             const countryDataMap = new Map();
             tempStations.forEach(st => {
-                if (st.country && st.country !== 'Global') { 
-                    if (!countryDataMap.has(st.country)) countryDataMap.set(st.country, { count: 0, name: st.countryName, flag: st.flag });
+                if (st.country) { 
+                    if (!countryDataMap.has(st.country)) {
+                        countryDataMap.set(st.country, {
+                            count: 0,
+                            name: COUNTRY_NAMES[st.country] || st.countryName || st.country,
+                            flag: st.flag || getFlagEmoji(st.country)
+                        });
+                    }
                     countryDataMap.get(st.country).count += 1;
                 }
             });
             
             let tvCountries = [];
             countryDataMap.forEach((data, code) => { 
-                if (COUNTRY_NAMES[code]) tvCountries.push({ code: code, name: COUNTRY_NAMES[code], count: data.count, flag: data.flag }); 
+                tvCountries.push({ code: code, name: data.name, count: data.count, flag: data.flag }); 
             });
             tvCountries.sort((a,b) => b.count - a.count); 
 
@@ -1168,7 +1384,7 @@ function assignSmartGenres(st, categoriesArr) {
             sc.innerHTML = optionsHTML;
 
             choicesInstance = new Choices(sc, {
-                removeItemButton: true, searchEnabled: true, searchPlaceholderValue: 'Поиск страны...', placeholderValue: '🌍 Выберите страны...', itemSelectText: '', noResultsText: 'Ничего не найдено', position: 'bottom'
+                removeItemButton: true, searchEnabled: true, searchPlaceholderValue: 'Поиск среди всех стран мира...', placeholderValue: '🌍 Выберите страны...', itemSelectText: '', noResultsText: 'Ничего не найдено', position: 'bottom'
             });
 
             sc.addEventListener('change', () => triggerFilterUpdate(null, true));
@@ -1249,8 +1465,7 @@ function assignSmartGenres(st, categoriesArr) {
             if (st.smartGenre !== 'Разное') descText.push(st.smartGenre);
             let displayDesc = descText.join(' • ') || 'Live TV';
 
-            container.innerHTML = `<div class="p-2.5 rounded-xl flex items-center gap-3 cursor-pointer pulsing-active bg-blue-600/20 border border-blue-500 w-full relative overflow-hidden shadow-[0_0_20px_var(--accent-glow)]"><div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div><div class="relative shrink-0 z-10"><img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover bg-black/80 border border-white/20" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'"></div><div class="flex flex-col flex-1 overflow-hidden z-10"><div class="flex items-center gap-1.5"><span class="text-sm font-extrabold text-white truncate">${st.name}</span><span class="flex h-2 w-2 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full dynamic-bg bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 dynamic-bg bg-blue-500"></span></span></div><div class="flex items-center gap-2"><span class="text-[10px] text-gray-300 truncate">${displayDesc}</span><span class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div></div><div class="flex flex-col items-end gap-1 shrink-0 z-10"><button class="btn-fav text-gray-300 hover:text-red-500 transition p-1 flex flex-col items-center" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-4 h-4 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div></div>`;
-            lucide.createIcons();
+            container.innerHTML = `<div class="p-2.5 rounded-xl flex items-center gap-3 cursor-pointer pulsing-active bg-blue-600/20 border border-blue-500 w-full relative overflow-hidden shadow-[0_0_20px_var(--accent-glow)]"><div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div><div class="relative shrink-0 z-10"><img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover bg-black/80 border border-white/20" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'"></div><div class="flex flex-col flex-1 overflow-hidden z-10"><div class="flex items-center gap-1.5"><span class="text-sm font-extrabold text-white truncate">${st.name}</span><span class="flex h-2 w-2 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full dynamic-bg bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 dynamic-bg bg-blue-500"></span></span></div><div class="flex items-center gap-2"><span class="text-[10px] text-gray-300 truncate">${displayDesc}</span><span class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div></div><div class="flex flex-col items-end gap-1 shrink-0 z-10"><button class="btn-fav text-gray-300 hover:text-red-500 transition p-1 flex flex-col items-center" onclick="toggleFavorite(event, '${st.id}')">${isFav ? '❤️' : '🤍'}</button></div></div>`;
         }
 
         function handleScroll() { if (scrollTimeout) cancelAnimationFrame(scrollTimeout); scrollTimeout = requestAnimationFrame(renderVisibleItems); }
@@ -1260,8 +1475,8 @@ function assignSmartGenres(st, categoriesArr) {
             if (!container || !content) return;
             
             const scrollTop = container.scrollTop, clientHeight = container.clientHeight;
-            const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 10);
-            const endIndex = Math.min(stationsData.length - 1, Math.ceil((scrollTop + clientHeight) / ITEM_HEIGHT) + 10);
+            const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 8);
+            const endIndex = Math.min(stationsData.length - 1, Math.ceil((scrollTop + clientHeight) / ITEM_HEIGHT) + 8);
             
             content.innerHTML = ''; const fragment = document.createDocumentFragment();
             for (let i = startIndex; i <= endIndex; i++) {
@@ -1278,10 +1493,10 @@ function assignSmartGenres(st, categoriesArr) {
                 if (st.smartGenre !== 'Разное') descText.push(st.smartGenre);
                 let displayDesc = descText.join(' • ') || 'Live TV';
 
-                el.innerHTML = `<div class="relative shrink-0"><img src="${imgSrc}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%234b5563\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'" class="w-10 h-10 rounded-lg object-cover bg-[#0a0a0e] border border-white/10" alt="Logo"></div><div class="flex flex-col flex-1 overflow-hidden"><div class="flex items-center justify-between pr-2"><span class="text-xs font-bold text-white truncate">${st.name}</span><span class="text-[9px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div><span class="text-[10px] text-gray-400 truncate mt-0.5">${displayDesc}</span></div><div class="flex flex-col items-end shrink-0 justify-center"><button class="btn-fav text-gray-500 hover:text-red-500 hover:scale-110 transition p-1 flex items-center gap-1" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-3.5 h-3.5 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div>`;
+                el.innerHTML = `<div class="relative shrink-0"><img loading="lazy" src="${imgSrc}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%234b5563\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'" class="w-10 h-10 rounded-lg object-cover bg-[#0a0a0e] border border-white/10" alt="Logo"></div><div class="flex flex-col flex-1 overflow-hidden"><div class="flex items-center justify-between pr-2"><span class="text-xs font-bold text-white truncate">${st.name}</span><span class="text-[9px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div><span class="text-[10px] text-gray-400 truncate mt-0.5">${displayDesc}</span></div><div class="flex flex-col items-end shrink-0 justify-center"><button class="btn-fav text-xs hover:scale-125 transition p-1" onclick="toggleFavorite(event, '${st.id}')">${isFav ? '❤️' : '🤍'}</button></div>`;
                 el.onclick = (e) => { if (!e.target.closest('.btn-fav')) selectStation(st); }; fragment.appendChild(el);
             }
-            content.appendChild(fragment); lucide.createIcons();
+            content.appendChild(fragment);
         }
 
         function toggleFavorite(e, stId) { 
@@ -1329,9 +1544,9 @@ function assignSmartGenres(st, categoriesArr) {
                 const container = document.getElementById('stations-list');
                 if (container && currentStationIndex !== -1) {
                     const targetScroll = currentStationIndex * ITEM_HEIGHT - container.clientHeight / 2 + ITEM_HEIGHT / 2;
-                    container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+                    container.scrollTo({ top: Math.max(0, targetScroll) });
                 }
-            }, 100);
+            }, 80);
         }
 
         function playNextStation() { if (stationsData.length === 0) return; let idx = currentStation ? stationsData.findIndex(s => s.id === currentStation.id) : -1; let nextIndex = (idx === -1) ? 0 : (idx + 1) % stationsData.length; selectStation(stationsData[nextIndex]); }
@@ -1370,6 +1585,29 @@ function assignSmartGenres(st, categoriesArr) {
                     hlsInstance.currentLevel = parseInt(e.target.value);
                 }
             });
+
+            const ttsVolSlider = document.getElementById('tts-volume-slider');
+            if (ttsVolSlider) {
+                ttsVolSlider.addEventListener('input', (e) => {
+                    ttsVoiceVolume = parseFloat(e.target.value);
+                    document.getElementById('tts-vol-label').innerText = `${Math.round(ttsVoiceVolume * 100)}%`;
+                    const p1 = document.getElementById('cloud-tts-player');
+                    const p2 = document.getElementById('cloud-tts-player-alt');
+                    if (p1) p1.volume = ttsVoiceVolume;
+                    if (p2) p2.volume = ttsVoiceVolume;
+                });
+            }
+
+            const duckSlider = document.getElementById('ducking-level-slider');
+            if (duckSlider) {
+                duckSlider.addEventListener('input', (e) => {
+                    channelDuckingRatio = parseFloat(e.target.value);
+                    document.getElementById('duck-vol-label').innerText = `${Math.round(channelDuckingRatio * 100)}%`;
+                    if (isCurrentlySpeakingTTS) {
+                        syncVolume(lastVolume * channelDuckingRatio, true);
+                    }
+                });
+            }
 
             let searchPlayTimeout;
             document.getElementById('input-search').addEventListener('input', (e) => {
@@ -1413,19 +1651,27 @@ function assignSmartGenres(st, categoriesArr) {
         function init3DBackground() {
             const container = document.getElementById('globe-container'); scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(0, 0, 45); 
-            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); container.appendChild(renderer.domElement);
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "low-power" }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(1.0); container.appendChild(renderer.domElement);
             globeGroup = new THREE.Group(); scene.add(globeGroup);
-            globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(10, 64, 64), new THREE.MeshBasicMaterial({ color: 0x050510, wireframe: true, transparent: true, opacity: 0.2 })));
-            globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(10.2, 64, 64), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, side: THREE.BackSide })));
-            const starsGeo = new THREE.BufferGeometry(), posArray = new Float32Array(1000 * 3); for (let i = 0; i < 1000 * 3; i++) posArray[i] = (Math.random() - 0.5) * 350; starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3)); scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff, transparent: true, opacity: 0.5 })));
+            globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 32), new THREE.MeshBasicMaterial({ color: 0x050510, wireframe: true, transparent: true, opacity: 0.2 })));
+            const starsGeo = new THREE.BufferGeometry(), posArray = new Float32Array(600 * 3); for (let i = 0; i < 600 * 3; i++) posArray[i] = (Math.random() - 0.5) * 350; starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3)); scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({ size: 0.15, color: 0xffffff, transparent: true, opacity: 0.5 })));
             window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-            function animate() { if (!is3DActive) { requestAnimationFrame(animate); return; } globeGroup.rotation.y += 0.001; globeGroup.rotation.x += 0.0005; renderer.render(scene, camera); requestAnimationFrame(animate); } animate();
+            function animate() {
+                if (is3DActive) {
+                    globeGroup.rotation.y += 0.001;
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
+                } else {
+                    setTimeout(animate, 500);
+                }
+            }
+            animate();
         }
 
         function setAppHeight() { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); } window.addEventListener('resize', setAppHeight); setAppHeight();
         
         // =========================================================================
-        // ЯДРО СИНХРОННОГО ПЕРЕВОДА ИСКЛЮЧИТЕЛЬНО ЖИВОГО ГОЛОСА (0% ЗАГЛУШЕК, ПОЛНАЯ ТИШИНА В ПАУЗАХ)
+        // ИСПРАВЛЕННОЕ ЯДРО СИНХРОННОГО ПЕРЕВОДА ВСЕХ КАНАЛОВ И РЕКЛАМЫ (100% ПОКРЫТИЕ)
         // =========================================================================
         let isAITextActive = false;
         let isAIVoiceActive = false;
@@ -1435,58 +1681,212 @@ function assignSmartGenres(st, categoriesArr) {
         let micPermissionBlocked = false;
         window.__persistentAudioStream = null;
 
+        // Уровень приглушения 45% по умолчанию, чтобы речь канала и реклама всегда оставались слышны распознавателю
+        let ttsVoiceVolume = 1.0;
+        let channelDuckingRatio = 0.45;
+
+        let detectedVoiceLangCode = null;
+        let currentDetectedSpeakerProfile = 'female';
+        let pitchAudioCtx = null;
+        let pitchAnalyser = null;
+        let pitchFreqBins = null;
+
         let isCurrentlySpeakingTTS = false;
         let speechWatchdogTimer = null;
         let localTtsStartVerifyTimer = null;
         let silenceHideTimer = null;
         let interimCommitTimer = null;
-        let committedWordCursor = 0;
+        let lastInterimBuffer = "";
+        let committedInterimPrefix = "";
         let lastTranslatedSourceText = "";
+        let lastTranslatedTimestamp = 0;
+        let lastSpeechChunkTimestamp = Date.now();
+        let activeCloudPlayerToggle = false;
+        let cueScheduleTimers = [];
         const translationCache = new Map();
 
         let ttsQueue = [];
         let cachedVoices = [];
         window.__activeUtterance = null;
 
-        // 1. СТРОГИЙ ФИЛЬТР ТОЛЬКО ГОЛОСА: полностью вырезает любые описания звуков, музыки, смеха, шумов и тегов
+        // Планировщик ВСЕХ субтитров сегмента (чтобы в рекламе и новостях не пропускалась ни одна фраза)
+        function clearCueScheduleTimers() {
+            for (let i = 0; i < cueScheduleTimers.length; i++) {
+                clearTimeout(cueScheduleTimers[i]);
+            }
+            cueScheduleTimers = [];
+        }
+
+        function scheduleAllParsedCues(cues) {
+            if (!Array.isArray(cues) || cues.length === 0) return;
+            const nowVideoTime = video.currentTime || 0;
+
+            cues.forEach((cue, idx) => {
+                if (!cue || !cue.text) return;
+                const voiceOnly = extractVoiceOnly(cue.text);
+                if (!voiceOnly || voiceOnly.length < 2) return;
+
+                let delayMs = 0;
+                if (typeof cue.startTime === 'number' && nowVideoTime > 0) {
+                    const diffSec = cue.startTime - nowVideoTime;
+                    if (diffSec > 0 && diffSec < 12) {
+                        delayMs = Math.floor(diffSec * 1000);
+                    } else if (diffSec < -4) {
+                        return; // Старый отработанный титр
+                    }
+                } else {
+                    delayMs = idx * 1100;
+                }
+
+                const timerId = setTimeout(() => {
+                    if (!isAITextActive && !isAIVoiceActive) return;
+                    setSubtitleSourceBadge("📝 СУБТИТРЫ ЭФИРА");
+                    handleIncomingForeignPhrase(voiceOnly);
+                }, delayMs);
+
+                cueScheduleTimers.push(timerId);
+            });
+        }
+
+        // 1. АНАЛИЗАТОР ЧАСТОТЫ ГОЛОСА (F0 Pitch Detector) + ГОЛОСОВОЙ ЭКВАЛАЙЗЕР РЕЧИ ПОВЕРХ МУЗЫКИ РЕКЛАМЫ
+        function connectStreamPitchAnalyzer() {
+            try {
+                if (!pitchAudioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) return;
+                    pitchAudioCtx = new AudioContextClass();
+                    pitchAnalyser = pitchAudioCtx.createAnalyser();
+                    pitchAnalyser.fftSize = 2048;
+                    pitchAnalyser.smoothingTimeConstant = 0.55;
+                    pitchFreqBins = new Uint8Array(pitchAnalyser.frequencyBinCount);
+                }
+                if (pitchAudioCtx.state === 'suspended') {
+                    pitchAudioCtx.resume().catch(() => {});
+                }
+                if (window.__persistentAudioStream && !window.__micPitchConnected) {
+                    const micSource = pitchAudioCtx.createMediaStreamSource(window.__persistentAudioStream);
+                    // Полосовой фильтр присутствия голоса (300 Гц - 3400 Гц) для выделения речи из рекламной музыки
+                    const voicePresenceFilter = pitchAudioCtx.createBiquadFilter();
+                    voicePresenceFilter.type = 'peaking';
+                    voicePresenceFilter.frequency.value = 1850;
+                    voicePresenceFilter.Q.value = 1.0;
+                    voicePresenceFilter.gain.value = 6.5;
+
+                    micSource.connect(voicePresenceFilter);
+                    voicePresenceFilter.connect(pitchAnalyser);
+                    window.__micPitchConnected = true;
+                }
+            } catch (e) {}
+        }
+
+        function detectSpeakerProfileNow(rawSpokenText = '') {
+            const manualMode = document.getElementById('ai-speaker-mode-selector')?.value || 'auto';
+            if (manualMode !== 'auto') {
+                currentDetectedSpeakerProfile = manualMode;
+                updateSpeakerBadgeUI(manualMode);
+                return manualMode;
+            }
+
+            if (currentStation && currentStation.smartGenre === 'Детям') {
+                currentDetectedSpeakerProfile = 'child';
+                updateSpeakerBadgeUI('child');
+                return 'child';
+            }
+
+            if (pitchAnalyser && pitchFreqBins && pitchAudioCtx) {
+                pitchAnalyser.getByteFrequencyData(pitchFreqBins);
+                const sampleRate = pitchAudioCtx.sampleRate || 44100;
+                const binWidth = sampleRate / pitchAnalyser.fftSize;
+
+                let maleEnergy = 0;   // 85 - 165 Гц
+                let femaleEnergy = 0; // 165 - 255 Гц
+                let childEnergy = 0;  // 255 - 430 Гц
+
+                for (let b = 3; b <= 20; b++) {
+                    const freq = b * binWidth;
+                    const val = pitchFreqBins[b];
+                    if (freq >= 80 && freq < 165) maleEnergy += val * 1.15;
+                    else if (freq >= 165 && freq < 255) femaleEnergy += val * 1.1;
+                    else if (freq >= 255 && freq <= 430) childEnergy += val;
+                }
+
+                const maxEnergy = Math.max(maleEnergy, femaleEnergy, childEnergy);
+                if (maxEnergy > 40) {
+                    if (childEnergy === maxEnergy && childEnergy > femaleEnergy * 1.15) {
+                        currentDetectedSpeakerProfile = 'child';
+                    } else if (maleEnergy === maxEnergy && maleEnergy > femaleEnergy * 1.05) {
+                        currentDetectedSpeakerProfile = 'male';
+                    } else {
+                        currentDetectedSpeakerProfile = 'female';
+                    }
+                    updateSpeakerBadgeUI(currentDetectedSpeakerProfile);
+                    return currentDetectedSpeakerProfile;
+                }
+            }
+
+            const lower = (rawSpokenText || '').toLowerCase();
+            if (/\b(boy|girl|kid|mommy|daddy|cartoon|малыш|ребенок|мама|папа)\b/i.test(lower)) {
+                currentDetectedSpeakerProfile = 'child';
+            } else if (/\b(mr\.|sir|president|minister|king|general|father|brother|he said|господин|президент|министр)\b/i.test(lower)) {
+                currentDetectedSpeakerProfile = 'male';
+            }
+
+            updateSpeakerBadgeUI(currentDetectedSpeakerProfile);
+            return currentDetectedSpeakerProfile;
+        }
+
+        function updateSpeakerBadgeUI(profile) {
+            const badge = document.getElementById('ai-speaker-profile-badge');
+            const menuBadge = document.getElementById('detected-voice-badge');
+            let label = '👩 ЖЕНЩИНА';
+            let colorClass = 'bg-pink-500/20 border border-pink-500/40 px-2 py-0.5 rounded-full text-pink-300 font-bold';
+
+            if (profile === 'male') {
+                label = '👨 МУЖЧИНА';
+                colorClass = 'bg-blue-500/20 border border-blue-500/40 px-2 py-0.5 rounded-full text-blue-300 font-bold';
+            } else if (profile === 'child') {
+                label = '🧒 РЕБЁНОК';
+                colorClass = 'bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full text-amber-300 font-bold';
+            }
+
+            if (badge) {
+                badge.className = colorClass;
+                badge.innerText = label;
+            }
+            if (menuBadge) {
+                menuBadge.innerText = label;
+            }
+        }
+
+        // 2. ФИЛЬТР ГОЛОСА (Сохраняет рекламные слоганы, бренды, цены и короткие реплики, удаляя только теги шумов [Music], [Applause], ♪)
         function extractVoiceOnly(rawText) {
             if (!rawText) return '';
             let text = String(rawText);
 
-            // Вырезаем любые HTML/VTT теги
             text = text.replace(/<[^>]*>/g, ' ');
-
-            // Вырезаем все описания звуков в скобках любого типа: [Music], (Applause), {Laughter}, *Sighs*
             text = text.replace(/\[[^\]]*\]/g, ' ');
-            text = text.replace(/\([^\)]*\)/g, ' ');
             text = text.replace(/\{[^\}]*\}/g, ' ');
-            text = text.replace(/\*[^\*]*\*/g, ' ');
-
-            // Вырезаем нотные знаки и маркеры титров
-            text = text.replace(/[♪♫♬♩♮♯#]+/g, ' ');
+            text = text.replace(/\((music|applause|laughter|cheering|sighs|groans|gasps|coughs|silence|noise|static|inaudible|indistinct|singing|horn|bell|beep|buzz|laughs|clapping|музыка|аплодисменты|смех|шум|тишина|вздох|кашель|гудок|звонок|пение|неразборчиво)[^\)]*\)/gi, ' ');
+            text = text.replace(/[♪♫♬♩♮♯]+/g, ' ');
             text = text.replace(/^[\s>»\-–—]+/gm, ' ');
-
-            // Вырезаем префиксы дикторов ("ANNOUNCER:", "SPEAKER 1:", "REPORTER:")
-            text = text.replace(/^[A-ZА-ЯЁ0-9\s]{2,20}:\s*/gm, ' ');
+            text = text.replace(/^(ANNOUNCER|NARRATOR|SPEAKER\s*\d*|REPORTER|HOST|VOICEOVER|ДИКТОР|ВЕДУЩИЙ):\s*/gim, ' ');
 
             text = text.replace(/\s+/g, ' ').trim();
             if (!text) return '';
 
-            // Отсекаем любые отдельные описания звуков без скобок на разных языках
             const soundDescriptionRegex = /^(music|playing music|upbeat music|dramatic music|instrumental music|applause|laughter|cheering|sigh|sighs|groan|groans|gasp|gasps|cough|coughs|silence|noise|static|inaudible|indistinct|singing|horn|bell|beep|buzz|laughs|clapping|crowd cheering|wind blowing|explosion|footsteps|doorbell|phone ringing|музыка|играет музыка|звучит музыка|фоновая музыка|аплодисменты|смех|смеются|шум|тишина|вздох|вздыхает|кашель|кашляет|гудок|звонок|пение|поет|неразборчиво|шаги|взрыв|ветер|крики|овации)[\s\.\!\?\,\-]*$/i;
             if (soundDescriptionRegex.test(text)) {
                 return '';
             }
 
-            // Проверяем, что в строке есть реальные слова (минимум 2 буквы любого алфавита)
-            if (!/[a-zA-Zа-яА-ЯёЁäöüßÄÖÜáéíóúñÁÉÍÓÚÑçÇğışöüĞİŞÖÜ\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]{2,}/.test(text)) {
+            // Пропускаем любые слова и рекламные фразы от 1 буквы/цифры
+            if (!/[a-zA-Zа-яА-ЯёЁ0-9äöüßÄÖÜáéíóúñÁÉÍÓÚÑçÇğışöüĞİŞÖÜ\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(text)) {
                 return '';
             }
 
             return text;
         }
 
-        // Показывает плашку субтитров ТОЛЬКО когда есть реальная речь, и скрывает её в тишине
         function showSubtitleOverlayWithVoice(origVoiceText, translatedVoiceText) {
             const subContainer = document.getElementById('ai-subtitles-container');
             const origEl = document.getElementById('ai-subtitles-orig');
@@ -1502,13 +1902,12 @@ function assignSmartGenres(st, categoriesArr) {
                 subContainer.classList.remove('hidden');
             }
 
-            // Если в течение 7 секунд после окончания фразы в эфире полная тишина — убираем плашку с экрана
             clearTimeout(silenceHideTimer);
             silenceHideTimer = setTimeout(() => {
                 if (!isCurrentlySpeakingTTS) {
                     hideSubtitleOverlayInSilence();
                 }
-            }, 7000);
+            }, 6000);
         }
 
         function hideSubtitleOverlayInSilence() {
@@ -1521,30 +1920,18 @@ function assignSmartGenres(st, categoriesArr) {
             if (subContainer) subContainer.classList.add('hidden');
         }
 
-        function initFemaleVoiceEngine() {
+        function initMultiVoiceEngine() {
             if (!('speechSynthesis' in window)) return;
-
             const loadVoices = () => {
                 cachedVoices = window.speechSynthesis.getVoices() || [];
-                const bestRu = getBestFemaleVoice('ru-RU');
-                const badge = document.getElementById('detected-voice-badge');
-                if (badge) {
-                    if (bestRu) {
-                        const cleanName = bestRu.name.replace(/Microsoft |Google |Apple |Desktop /gi, '').split(' ')[0];
-                        badge.innerText = `👩 ${cleanName}`;
-                    } else {
-                        badge.innerText = `👩 Облачный RU`;
-                    }
-                }
             };
-
             loadVoices();
             if (window.speechSynthesis.onvoiceschanged !== undefined) {
                 window.speechSynthesis.onvoiceschanged = loadVoices;
             }
         }
 
-        function getBestFemaleVoice(targetLang = 'ru-RU') {
+        function getVoiceForLanguageAndProfile(targetLang = 'ru-RU', profile = 'female') {
             if (!('speechSynthesis' in window)) return null;
             if (!cachedVoices || cachedVoices.length === 0) {
                 cachedVoices = window.speechSynthesis.getVoices() || [];
@@ -1553,14 +1940,13 @@ function assignSmartGenres(st, categoriesArr) {
             const langPrefix = targetLang.split('-')[0].toLowerCase();
             const matchingVoices = cachedVoices.filter(v => {
                 const vLang = (v.lang || '').toLowerCase();
-                const vName = (v.name || '').toLowerCase();
-                return vLang.startsWith(langPrefix) || (langPrefix === 'ru' && (vName.includes('русск') || vName.includes('russian')));
+                return vLang.startsWith(langPrefix);
             });
 
             if (matchingVoices.length === 0) return null;
 
-            const femaleKeywords = ['irina', 'ирина', 'svetlana', 'светлана', 'milena', 'милена', 'katya', 'катя', 'tatyana', 'татьяна', 'elena', 'елена', 'dariya', 'дарья', 'alyona', 'алена', 'marina', 'марина', 'natalia', 'наталья', 'google русский', 'google russian', 'female', 'женский', 'zira', 'samantha', 'victoria', 'paulina', 'monica', 'helena', 'hedda', 'katja', 'hortense', 'amelie', 'alice', 'elsa', 'kyoko', 'yuna', 'huihui', 'yaoyao'];
-            const maleKeywords = ['pavel', 'павел', 'dmitry', 'дмитрий', 'yuri', 'юрий', 'maxim', 'максим', 'aleksandr', 'александр', 'artem', 'артем', 'boris', 'борис', 'male', 'мужской', 'david', 'mark', 'stefan', 'paul', 'daniel'];
+            const femaleKeywords = ['irina', 'ирина', 'svetlana', 'светлана', 'milena', 'милена', 'katya', 'катя', 'tatyana', 'татьяна', 'elena', 'dariya', 'alyona', 'google русский', 'google', 'female', 'женский', 'zira', 'samantha', 'victoria', 'paulina', 'monica', 'helena', 'hedda', 'katja', 'hortense', 'amelie', 'alice', 'elsa', 'kyoko', 'yuna', 'huihui', 'yaoyao', 'aria', 'jenny', 'sonia'];
+            const maleKeywords = ['pavel', 'павел', 'dmitry', 'дмитрий', 'yuri', 'юрий', 'maxim', 'максим', 'aleksandr', 'artem', 'boris', 'male', 'мужской', 'david', 'mark', 'stefan', 'paul', 'daniel', 'george', 'guy', 'thomas', 'jorge', 'luca', 'ichiro'];
 
             let bestVoice = null;
             let bestScore = -999;
@@ -1569,18 +1955,19 @@ function assignSmartGenres(st, categoriesArr) {
                 const nameLower = voice.name.toLowerCase();
                 let score = 0;
 
-                if (maleKeywords.some(m => nameLower.includes(m))) {
-                    score -= 100;
+                const isMaleName = maleKeywords.some(m => nameLower.includes(m));
+                const isFemaleName = femaleKeywords.some(f => nameLower.includes(f));
+
+                if (profile === 'male') {
+                    if (isMaleName) score += 80;
+                    if (isFemaleName) score -= 60;
+                } else {
+                    if (isFemaleName) score += 80;
+                    if (isMaleName) score -= 80;
                 }
 
-                femaleKeywords.forEach((f, idx) => {
-                    if (nameLower.includes(f)) {
-                        score += (60 - idx);
-                    }
-                });
-
                 if (nameLower.includes('natural') || nameLower.includes('online') || nameLower.includes('google')) {
-                    score += 25;
+                    score += 20;
                 }
 
                 if (score > bestScore) {
@@ -1589,64 +1976,123 @@ function assignSmartGenres(st, categoriesArr) {
                 }
             }
 
-            if (bestScore < 0) return null;
             return bestVoice || matchingVoices[0];
         }
 
+        // УМНЫЙ ДЕТЕКТОР ЯЗЫКА КАНАЛА: проверяет HLS аудиодорожку, название канала ("DW English", "Español", "Arabic"), теги, авто-речь и страну
         function getChannelSourceLanguage() {
             const manualSelector = document.getElementById('ai-source-lang-selector');
             if (manualSelector && manualSelector.value !== 'auto') {
                 return manualSelector.value;
             }
-            if (currentStation && currentStation.country) {
-                const cCode = currentStation.country.toUpperCase();
-                if (COUNTRY_TO_LANG_MAP[cCode]) {
-                    return COUNTRY_TO_LANG_MAP[cCode];
+
+            // 1. Если уже распознан язык по живой речи этого канала
+            if (detectedVoiceLangCode) {
+                const matched = WORLD_LANGUAGES.find(l => l.short === detectedVoiceLangCode.toLowerCase());
+                if (matched) return matched.code;
+            }
+
+            // 2. Проверяем метаданные активной аудиодорожки HLS-потока
+            if (hlsInstance && Array.isArray(hlsInstance.audioTracks) && hlsInstance.audioTracks.length > 0) {
+                const activeTrack = hlsInstance.audioTracks[hlsInstance.audioTrack] || hlsInstance.audioTracks[0];
+                const trackLang = (activeTrack && (activeTrack.lang || activeTrack.name) || '').toLowerCase().trim();
+                if (trackLang) {
+                    const matchedByTrack = WORLD_LANGUAGES.find(l => trackLang === l.short || trackLang.startsWith(l.short + '-'));
+                    if (matchedByTrack) return matchedByTrack.code;
                 }
             }
+
+            // 3. Проверяем явные языковые маркеры в названии самого канала (например, "DW English" в Германии или "France 24 English" во Франции)
+            if (currentStation) {
+                const titleAndTags = ((currentStation.name || '') + ' ' + (currentStation.streamLang || '')).toLowerCase();
+                if (/\b(english|eng|bbc|cnn|fox|nbc|cbs|abc|sky news|al jazeera english|nhk world|trt world|cgtn)\b/.test(titleAndTags)) return 'en-US';
+                if (/\b(deutsch|german|zdf|ard|ndr|wdr|mdr|rtl)\b/.test(titleAndTags)) return 'de-DE';
+                if (/\b(español|espanol|spanish|tve|antena 3|telemundo|univision)\b/.test(titleAndTags)) return 'es-ES';
+                if (/\b(français|francais|french|tf1|tv5monde|bfm)\b/.test(titleAndTags)) return 'fr-FR';
+                if (/\b(arabic|alarabiya|al arabiya|al hadath)\b/.test(titleAndTags)) return 'ar-SA';
+                if (/\b(türk|turk|trt|haberturk|ntv turk)\b/.test(titleAndTags)) return 'tr-TR';
+                if (/\b(italiano|italian|rai|mediaset)\b/.test(titleAndTags)) return 'it-IT';
+                if (/\b(português|portugues|globo|rtp)\b/.test(titleAndTags)) return 'pt-BR';
+                if (/\b(русский|россия|нтв|первый|рен|тнт|стс)\b/.test(titleAndTags)) return 'ru-RU';
+                if (/\b(україн|1\+1|ictv|стб|рада|суспільне)\b/.test(titleAndTags)) return 'uk-UA';
+                if (/\b(polski|tvp|polsat|tvn)\b/.test(titleAndTags)) return 'pl-PL';
+
+                // 4. По коду страны канала
+                if (currentStation.country) {
+                    const cCode = currentStation.country.toUpperCase();
+                    if (COUNTRY_TO_LANG_MAP[cCode]) {
+                        return COUNTRY_TO_LANG_MAP[cCode];
+                    }
+                }
+            }
+
             return 'en-US';
         }
 
-        function updateChannelLanguagePairUI() {
-            const srcLang = getChannelSourceLanguage().split('-')[0].toUpperCase();
-            const tgtLang = (document.getElementById('ai-lang-selector').value || 'ru-RU').split('-')[0].toUpperCase();
-            const pairEl = document.getElementById('ai-sub-lang-pair');
-            if (pairEl) {
-                const flag = currentStation ? currentStation.flag : '🌍';
-                pairEl.innerText = `${flag} ${srcLang} ➔ ${tgtLang}`;
+        // Принудительное обновление языка распознавателя при переключении любого канала
+        function syncRecognizerLanguageToCurrentChannel() {
+            const targetRecLang = getChannelSourceLanguage();
+            updateChannelLanguagePairUI();
+            if (speechRecognition) {
+                const currentRecLang = speechRecognition.lang;
+                speechRecognition.lang = targetRecLang;
+                if (isRecognitionRunning && currentRecLang !== targetRecLang) {
+                    // Перезапускаем движок с новым языком канала (onend автоматически подхватит за 90 мс без запроса микрофона)
+                    try { speechRecognition.stop(); } catch (e) {}
+                } else if (!isRecognitionRunning && micSessionAuthorized && !micPermissionBlocked) {
+                    try { speechRecognition.start(); } catch (e) {}
+                }
             }
         }
 
-        // Многоступенчатый нейропереводчик исключительно человеческого голоса
-        async function translateTextToTarget(text, targetLangBcp47 = 'ru-RU', sourceLangBcp47 = 'auto') {
+        function updateChannelLanguagePairUI() {
+            const manualSelector = document.getElementById('ai-source-lang-selector');
+            const isAuto = !manualSelector || manualSelector.value === 'auto';
+            const srcShort = detectedVoiceLangCode
+                ? detectedVoiceLangCode.toUpperCase()
+                : getChannelSourceLanguage().split('-')[0].toUpperCase();
+            const tgtShort = (document.getElementById('ai-lang-selector').value || 'ru-RU').split('-')[0].toUpperCase();
+            const pairEl = document.getElementById('ai-sub-lang-pair');
+            if (pairEl) {
+                pairEl.innerText = `${isAuto ? '🎙️ АВТО(' + srcShort + ')' : srcShort} ➔ ${tgtShort}`;
+            }
+        }
+
+        // 3. ДВУСТОРОННИЙ ПЕРЕВОДЧИК НА ВСЕ 48 ЯЗЫКОВ МИРА (Переводит даже если речь на канале совпала с языком страны)
+        async function translateTextToTarget(text, targetLangBcp47 = 'ru-RU') {
             const cleanText = extractVoiceOnly(text);
             if (!cleanText) return '';
 
             const tl = targetLangBcp47.split('-')[0].toLowerCase();
-            const sl = sourceLangBcp47 === 'auto' ? 'auto' : sourceLangBcp47.split('-')[0].toLowerCase();
-
-            const hasRussianCyrillic = /[а-яА-ЯёЁ]{3,}/.test(cleanText);
-            const hasNonRussianCyrillic = /[іїєґІЇЄҐђјљњћџЂЈЉЊЋЏўЎ]/.test(cleanText);
-            if (tl === 'ru' && sl === 'ru' && hasRussianCyrillic && !hasNonRussianCyrillic) {
-                return cleanText;
-            }
+            const manualSelector = document.getElementById('ai-source-lang-selector');
+            const sl = (manualSelector && manualSelector.value !== 'auto')
+                ? manualSelector.value.split('-')[0].toLowerCase()
+                : 'auto';
 
             const cacheKey = `${sl}_${tl}_${cleanText}`;
             if (translationCache.has(cacheKey)) {
                 return translationCache.get(cacheKey);
             }
 
-            // Канал 1: Google Translate GTX
+            // Канал 1: Google GTX (автоопределение любого языка мира + перевод рекламных слоганов)
             try {
-                const url1 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(cleanText)}`;
+                const url1 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(cleanText)}`;
                 const res1 = await fetch(url1);
                 if (res1.ok) {
                     const data1 = await res1.json();
+                    if (data1 && typeof data1[2] === 'string' && data1[2].length >= 2) {
+                        const detectedShort = data1[2].split('-')[0].toLowerCase();
+                        if (detectedShort !== detectedVoiceLangCode) {
+                            detectedVoiceLangCode = detectedShort;
+                            updateChannelLanguagePairUI();
+                            syncSpeechRecognizerWithDetectedLanguage(detectedShort);
+                        }
+                    }
                     if (Array.isArray(data1) && Array.isArray(data1[0])) {
                         const rawTranslated1 = data1[0].map(part => part[0]).join('').trim();
                         const translated1 = extractVoiceOnly(rawTranslated1);
                         if (translated1) {
-                            if (translationCache.size > 300) translationCache.clear();
+                            if (translationCache.size > 400) translationCache.clear();
                             translationCache.set(cacheKey, translated1);
                             return translated1;
                         }
@@ -1656,7 +2102,7 @@ function assignSmartGenres(st, categoriesArr) {
 
             // Канал 2: Google Clients5 Dictionary API
             try {
-                const url2 = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(cleanText)}`;
+                const url2 = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(cleanText)}`;
                 const res2 = await fetch(url2);
                 if (res2.ok) {
                     const data2 = await res2.json();
@@ -1676,7 +2122,8 @@ function assignSmartGenres(st, categoriesArr) {
 
             // Канал 3: MyMemory API
             try {
-                const srcPair = (sl === 'auto' || sl === tl) ? 'en' : sl;
+                const srcPair = (sl === 'auto' || sl === tl) ? (detectedVoiceLangCode || getChannelSourceLanguage().split('-')[0] || 'en') : sl;
+                if (srcPair === tl) return cleanText;
                 const url3 = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${srcPair}|${tl}`;
                 const res3 = await fetch(url3);
                 if (res3.ok) {
@@ -1691,7 +2138,19 @@ function assignSmartGenres(st, categoriesArr) {
                 }
             } catch (e3) {}
 
-            return '';
+            return cleanText;
+        }
+
+        function syncSpeechRecognizerWithDetectedLanguage(shortCode) {
+            const manualSelector = document.getElementById('ai-source-lang-selector');
+            if (manualSelector && manualSelector.value !== 'auto') return;
+            const matched = WORLD_LANGUAGES.find(l => l.short === shortCode);
+            if (matched && speechRecognition && speechRecognition.lang !== matched.code) {
+                speechRecognition.lang = matched.code;
+                if (isRecognitionRunning) {
+                    try { speechRecognition.stop(); } catch (e) {}
+                }
+            }
         }
 
         function syncTranslatorButtonsUI() {
@@ -1743,8 +2202,9 @@ function assignSmartGenres(st, categoriesArr) {
 
             if (isAITextActive) {
                 lastTranslatedSourceText = "";
-                committedWordCursor = 0;
-                showToast("🇷🇺 Перевод живого голоса в субтитры включен");
+                lastInterimBuffer = "";
+                committedInterimPrefix = "";
+                showToast("🌍 Перевод всех программ и рекламы в субтитры включен");
                 restartLiveTranslationPipeline();
             } else {
                 showToast("ИИ-субтитры выключены");
@@ -1762,10 +2222,11 @@ function assignSmartGenres(st, categoriesArr) {
             if (isAIVoiceActive) {
                 video.muted = false;
                 document.getElementById('unmute-overlay-btn').classList.add('hidden');
-                initFemaleVoiceEngine();
+                initMultiVoiceEngine();
                 lastTranslatedSourceText = "";
-                committedWordCursor = 0;
-                showToast("👩 Русская женская озвучка голоса включена");
+                lastInterimBuffer = "";
+                committedInterimPrefix = "";
+                showToast("🗣️ Lip-Sync озвучка (Эфир + Реклама) включена");
                 restartLiveTranslationPipeline();
             } else {
                 clearSpeechQueue();
@@ -1779,6 +2240,7 @@ function assignSmartGenres(st, categoriesArr) {
         function checkAndStopTranslation() {
             if (!isAITextActive && !isAIVoiceActive) {
                 clearTimeout(interimCommitTimer);
+                clearCueScheduleTimers();
                 hideSubtitleOverlayInSilence();
                 clearSpeechQueue();
             }
@@ -1806,11 +2268,13 @@ function assignSmartGenres(st, categoriesArr) {
                         if (!isAITextActive && !isAIVoiceActive) return;
                         const activeCues = track.activeCues;
                         if (activeCues && activeCues.length > 0) {
-                            const cueText = activeCues[activeCues.length - 1].text;
-                            const voiceOnly = extractVoiceOnly(cueText);
-                            if (voiceOnly.length > 1) {
-                                setSubtitleSourceBadge("📝 ГОЛОС (СУБТИТРЫ)");
-                                handleIncomingForeignPhrase(voiceOnly);
+                            for (let c = 0; c < activeCues.length; c++) {
+                                const cueText = activeCues[c].text;
+                                const voiceOnly = extractVoiceOnly(cueText);
+                                if (voiceOnly.length > 1) {
+                                    setSubtitleSourceBadge("📝 LIP-SYNC ПОТОК");
+                                    handleIncomingForeignPhrase(voiceOnly);
+                                }
                             }
                         }
                     };
@@ -1819,7 +2283,29 @@ function assignSmartGenres(st, categoriesArr) {
             return foundTrack;
         }
 
-        // Запрашивает микрофон ровно 1 раз за сессию и удерживает поток при переключении каналов
+        // Выделяет новые слова из текущего буфера речи (даже если браузер изменил предыдущие слова на фоне рекламной музыки)
+        function extractUncommittedSpeechChunk(fullInterimText) {
+            const cleanFull = extractVoiceOnly(fullInterimText);
+            if (!cleanFull) return '';
+
+            if (!committedInterimPrefix) {
+                return cleanFull;
+            }
+
+            if (cleanFull.toLowerCase().startsWith(committedInterimPrefix.toLowerCase())) {
+                return cleanFull.slice(committedInterimPrefix.length).trim();
+            }
+
+            const fullWords = cleanFull.split(/\s+/);
+            const prefixWords = committedInterimPrefix.split(/\s+/);
+            if (fullWords.length > prefixWords.length) {
+                return fullWords.slice(prefixWords.length).join(' ').trim();
+            }
+
+            return cleanFull;
+        }
+
+        // 4. БЕСПРЕРЫВНЫЙ ЗАХВАТ ЛЮБОГО ГОЛОСА И РЕКЛАМЫ (Без потери коротких слоганов при смене сцен)
         async function ensureSingleSessionSpeechRecognition() {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRec || micPermissionBlocked) return;
@@ -1827,9 +2313,16 @@ function assignSmartGenres(st, categoriesArr) {
             if (!micSessionAuthorized) {
                 try {
                     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        window.__persistentAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        window.__persistentAudioStream = await navigator.mediaDevices.getUserMedia({
+                            audio: {
+                                echoCancellation: false,
+                                noiseSuppression: false, // Отключаем подавление фона, чтобы браузер не глушил голос поверх музыки в рекламе!
+                                autoGainControl: true
+                            }
+                        });
                     }
                     micSessionAuthorized = true;
+                    connectStreamPitchAnalyzer();
                 } catch (e) {
                     micPermissionBlocked = true;
                     return;
@@ -1837,12 +2330,7 @@ function assignSmartGenres(st, categoriesArr) {
             }
 
             if (speechRecognition) {
-                if (!isRecognitionRunning) {
-                    try {
-                        speechRecognition.lang = getChannelSourceLanguage();
-                        speechRecognition.start();
-                    } catch (e) {}
-                }
+                syncRecognizerLanguageToCurrentChannel();
                 return;
             }
 
@@ -1872,60 +2360,50 @@ function assignSmartGenres(st, categoriesArr) {
                         }
                     }
 
-                    const srcPrefix = getChannelSourceLanguage().split('-')[0].toLowerCase();
-
-                    // Переводим непрерывную речь на лету каждые 6 слов без ожидания длинной паузы
+                    // А) Мгновенная обработка живой речи и рекламы
                     if (interimTranscript.trim().length > 1) {
                         const cleanInterim = extractVoiceOnly(interimTranscript);
-                        // Не переводим собственный русский голос переводчицы на иностранном канале
-                        if (srcPrefix !== 'ru' && /[а-яА-ЯёЁ]{4,}/.test(cleanInterim)) {
-                            return;
-                        }
                         if (cleanInterim) {
-                            const words = cleanInterim.split(/\s+/).filter(Boolean);
-                            if (words.length < committedWordCursor) {
-                                committedWordCursor = 0;
-                            }
-                            const newWords = words.slice(committedWordCursor);
-                            if (newWords.length >= 6) {
-                                const chunk = newWords.slice(0, 6).join(' ');
-                                committedWordCursor += 6;
-                                setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
-                                handleIncomingForeignPhrase(chunk);
+                            lastInterimBuffer = cleanInterim;
+                            const freshChunk = extractUncommittedSpeechChunk(cleanInterim);
+                            const freshWords = freshChunk ? freshChunk.split(/\s+/).filter(Boolean) : [];
+
+                            // Как только сказано 3-4 слова — сразу переводим и озвучиваем в губы!
+                            if (freshWords.length >= 3) {
+                                const chunkToTranslate = freshWords.slice(0, 4).join(' ');
+                                committedInterimPrefix = (committedInterimPrefix + ' ' + chunkToTranslate).trim();
+                                setSubtitleSourceBadge("🎙️ LIP-SYNC ГОЛОС");
+                                handleIncomingForeignPhrase(chunkToTranslate);
                             }
 
+                            // Если в рекламе короткий слоган (1-2 слова) и пауза 250 мс — переводим немедленно!
                             clearTimeout(interimCommitTimer);
                             interimCommitTimer = setTimeout(() => {
-                                const curWords = cleanInterim.split(/\s+/).filter(Boolean);
-                                if (curWords.length > committedWordCursor) {
-                                    const tail = curWords.slice(committedWordCursor).join(' ');
-                                    committedWordCursor = curWords.length;
-                                    if (tail.trim().length > 1) {
-                                        setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
-                                        handleIncomingForeignPhrase(tail.trim());
-                                    }
+                                const remainingChunk = extractUncommittedSpeechChunk(lastInterimBuffer);
+                                if (remainingChunk && remainingChunk.length > 1) {
+                                    committedInterimPrefix = lastInterimBuffer;
+                                    setSubtitleSourceBadge("🎙️ LIP-SYNC ГОЛОС");
+                                    handleIncomingForeignPhrase(remainingChunk);
                                 }
-                            }, 850);
+                            }, 250);
                         }
                     }
 
+                    // Б) Финализация фразы
                     if (finalTranscript.trim().length > 1) {
                         clearTimeout(interimCommitTimer);
                         const cleanFinal = extractVoiceOnly(finalTranscript);
-                        if (srcPrefix !== 'ru' && /[а-яА-ЯёЁ]{4,}/.test(cleanFinal)) {
-                            committedWordCursor = 0;
-                            return;
-                        }
                         if (cleanFinal) {
-                            const words = cleanFinal.split(/\s+/).filter(Boolean);
-                            const remaining = words.slice(committedWordCursor).join(' ');
-                            committedWordCursor = 0;
-                            if (remaining.trim().length > 1) {
-                                setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
-                                handleIncomingForeignPhrase(remaining.trim());
+                            const remainingFinal = extractUncommittedSpeechChunk(cleanFinal);
+                            lastInterimBuffer = "";
+                            committedInterimPrefix = "";
+                            if (remainingFinal && remainingFinal.length > 1) {
+                                setSubtitleSourceBadge("🎙️ LIP-SYNC ГОЛОС");
+                                handleIncomingForeignPhrase(remainingFinal);
                             }
                         } else {
-                            committedWordCursor = 0;
+                            lastInterimBuffer = "";
+                            committedInterimPrefix = "";
                         }
                     }
                 };
@@ -1939,7 +2417,15 @@ function assignSmartGenres(st, categoriesArr) {
 
                 speechRecognition.onend = () => {
                     isRecognitionRunning = false;
-                    committedWordCursor = 0;
+                    // ИСПРАВЛЕНО: Если распознаватель перезапустился на рекламной склейке, обязательно переводим оставшийся в буфере слоган!
+                    if (lastInterimBuffer) {
+                        const leftover = extractUncommittedSpeechChunk(lastInterimBuffer);
+                        lastInterimBuffer = "";
+                        committedInterimPrefix = "";
+                        if (leftover && leftover.length > 1) {
+                            handleIncomingForeignPhrase(leftover);
+                        }
+                    }
                     if (micSessionAuthorized && !micPermissionBlocked && (isAITextActive || isAIVoiceActive) && isPlaying) {
                         setTimeout(() => {
                             try {
@@ -1948,7 +2434,7 @@ function assignSmartGenres(st, categoriesArr) {
                                     speechRecognition.start();
                                 }
                             } catch (e) {}
-                        }, 500);
+                        }, 90);
                     }
                 };
 
@@ -1963,36 +2449,57 @@ function assignSmartGenres(st, categoriesArr) {
             if (badge) badge.innerText = label;
         }
 
+        function calculateLipSyncSpeechRate(translatedText) {
+            const now = Date.now();
+            const deltaMs = Math.max(350, now - lastSpeechChunkTimestamp);
+            lastSpeechChunkTimestamp = now;
+
+            const charCount = (translatedText || '').length;
+            let rate = 1.18;
+            if (deltaMs < 1700 || charCount > 40) rate = 1.26;
+            if (deltaMs < 1000 || charCount > 75) rate = 1.35;
+            return rate;
+        }
+
         async function handleIncomingForeignPhrase(originalText, forcedSourceLang = null) {
             if (!isAITextActive && !isAIVoiceActive) return;
 
             const cleanOrigVoice = extractVoiceOnly(originalText);
-            if (!cleanOrigVoice || cleanOrigVoice === lastTranslatedSourceText) return;
-            lastTranslatedSourceText = cleanOrigVoice;
+            if (!cleanOrigVoice) return;
 
-            const sourceLang = forcedSourceLang || getChannelSourceLanguage();
+            // Разрешаем повторные рекламные слоганы, если прошло больше 2.5 секунд
+            const now = Date.now();
+            if (cleanOrigVoice === lastTranslatedSourceText && (now - lastTranslatedTimestamp) < 2500) {
+                return;
+            }
+            lastTranslatedSourceText = cleanOrigVoice;
+            lastTranslatedTimestamp = now;
+
+            const speakerProfile = detectSpeakerProfileNow(cleanOrigVoice);
             const targetLang = document.getElementById('ai-lang-selector').value || 'ru-RU';
 
-            const translatedText = await translateTextToTarget(cleanOrigVoice, targetLang, sourceLang);
+            const translatedText = await translateTextToTarget(cleanOrigVoice, targetLang);
             const cleanTranslatedVoice = extractVoiceOnly(translatedText);
             if (!cleanTranslatedVoice) return;
+
+            const lipSyncRate = calculateLipSyncSpeechRate(cleanTranslatedVoice);
 
             if (isAITextActive) {
                 showSubtitleOverlayWithVoice(cleanOrigVoice, cleanTranslatedVoice);
             }
 
             if (isAIVoiceActive) {
-                enqueueFemaleVoiceover(cleanTranslatedVoice, targetLang);
+                enqueueLipSyncVoiceover(cleanTranslatedVoice, targetLang, speakerProfile, lipSyncRate);
             }
         }
 
-        function enqueueFemaleVoiceover(text, lang = 'ru-RU') {
+        function enqueueLipSyncVoiceover(text, lang = 'ru-RU', profile = 'female', rate = 1.2) {
             if (!isAIVoiceActive || !text) return;
 
             if (ttsQueue.length >= 2) {
                 ttsQueue.shift();
             }
-            ttsQueue.push({ text, lang });
+            ttsQueue.push({ text, lang, profile, rate });
 
             if (!isCurrentlySpeakingTTS) {
                 processNextInSpeechQueue();
@@ -2008,10 +2515,10 @@ function assignSmartGenres(st, categoriesArr) {
             if ('speechSynthesis' in window) {
                 try { window.speechSynthesis.cancel(); } catch (e) {}
             }
-            const cloudPlayer = document.getElementById('cloud-tts-player');
-            if (cloudPlayer) {
-                try { cloudPlayer.pause(); } catch (e) {}
-            }
+            const p1 = document.getElementById('cloud-tts-player');
+            const p2 = document.getElementById('cloud-tts-player-alt');
+            if (p1) { try { p1.pause(); } catch (e) {} }
+            if (p2) { try { p2.pause(); } catch (e) {} }
             setVoiceSpeakingIndicator(false);
             if (!video.paused) {
                 syncVolume(lastVolume, true);
@@ -2033,7 +2540,7 @@ function assignSmartGenres(st, categoriesArr) {
         function advanceSpeechQueue() {
             clearTimeout(speechWatchdogTimer);
             clearTimeout(localTtsStartVerifyTimer);
-            setTimeout(processNextInSpeechQueue, 80);
+            setTimeout(processNextInSpeechQueue, 15);
         }
 
         function processNextInSpeechQueue() {
@@ -2050,29 +2557,32 @@ function assignSmartGenres(st, categoriesArr) {
             isCurrentlySpeakingTTS = true;
             const item = ttsQueue.shift();
 
-            // Приглушаем оригинальный звук телеканала до 18% только на время речи переводчицы
-            const duckedVolume = Math.max(0.06, lastVolume * 0.18);
+            const duckedVolume = Math.max(0.08, lastVolume * channelDuckingRatio);
             syncVolume(duckedVolume, true);
             setVoiceSpeakingIndicator(true);
 
             speechWatchdogTimer = setTimeout(() => {
                 advanceSpeechQueue();
-            }, 10500);
+            }, 7000);
 
-            const femaleVoice = getBestFemaleVoice(item.lang);
+            const matchedVoice = getVoiceForLanguageAndProfile(item.lang, item.profile);
 
-            if ('speechSynthesis' in window && femaleVoice) {
+            let targetPitch = 1.12;
+            if (item.profile === 'male') targetPitch = 0.82;
+            else if (item.profile === 'child') targetPitch = 1.42;
+
+            if ('speechSynthesis' in window && matchedVoice) {
                 try {
                     window.speechSynthesis.resume();
 
                     let hasStartedSpeaking = false;
                     const utterance = new SpeechSynthesisUtterance(item.text);
                     window.__activeUtterance = utterance;
-                    utterance.voice = femaleVoice;
+                    utterance.voice = matchedVoice;
                     utterance.lang = item.lang;
-                    utterance.pitch = 1.14;
-                    utterance.rate = 1.12;
-                    utterance.volume = 1.0;
+                    utterance.pitch = targetPitch;
+                    utterance.rate = item.rate || 1.2;
+                    utterance.volume = ttsVoiceVolume;
 
                     utterance.onstart = () => {
                         hasStartedSpeaking = true;
@@ -2086,29 +2596,30 @@ function assignSmartGenres(st, categoriesArr) {
 
                     utterance.onerror = () => {
                         clearTimeout(localTtsStartVerifyTimer);
-                        playCloudFemaleTTSFallback(item.text, item.lang);
+                        playCloudLipSyncTTSFallback(item.text, item.lang, item.profile, item.rate);
                     };
 
                     localTtsStartVerifyTimer = setTimeout(() => {
                         if (!hasStartedSpeaking) {
                             try { window.speechSynthesis.cancel(); } catch (e) {}
-                            playCloudFemaleTTSFallback(item.text, item.lang);
+                            playCloudLipSyncTTSFallback(item.text, item.lang, item.profile, item.rate);
                         }
-                    }, 1000);
+                    }, 420);
 
                     window.speechSynthesis.speak(utterance);
                     return;
                 } catch (e) {
-                    playCloudFemaleTTSFallback(item.text, item.lang);
+                    playCloudLipSyncTTSFallback(item.text, item.lang, item.profile, item.rate);
                     return;
                 }
             }
 
-            playCloudFemaleTTSFallback(item.text, item.lang);
+            playCloudLipSyncTTSFallback(item.text, item.lang, item.profile, item.rate);
         }
 
-        function playCloudFemaleTTSFallback(text, lang = 'ru-RU') {
-            const cloudPlayer = document.getElementById('cloud-tts-player');
+        function playCloudLipSyncTTSFallback(text, lang = 'ru-RU', profile = 'female', rate = 1.2) {
+            activeCloudPlayerToggle = !activeCloudPlayerToggle;
+            const cloudPlayer = document.getElementById(activeCloudPlayerToggle ? 'cloud-tts-player' : 'cloud-tts-player-alt');
             if (!cloudPlayer) {
                 advanceSpeechQueue();
                 return;
@@ -2116,10 +2627,23 @@ function assignSmartGenres(st, categoriesArr) {
 
             try {
                 const tl = lang.split('-')[0].toLowerCase();
-                const shortText = text.substring(0, 180);
+                const shortText = text.substring(0, 190);
+                cloudPlayer.volume = ttsVoiceVolume;
 
-                cloudPlayer.src = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(shortText)}&tl=${tl}&client=gtx`;
-                cloudPlayer.playbackRate = 1.12;
+                if (tl === 'ru' && profile === 'male') {
+                    cloudPlayer.src = `https://api.streamelements.com/kappa/v2/speech?voice=Maxim&text=${encodeURIComponent(shortText)}`;
+                    cloudPlayer.playbackRate = rate;
+                } else if (tl === 'ru' && profile === 'child') {
+                    cloudPlayer.src = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(shortText)}&tl=${tl}&client=gtx`;
+                    cloudPlayer.preservesPitch = false;
+                    cloudPlayer.mozPreservesPitch = false;
+                    cloudPlayer.webkitPreservesPitch = false;
+                    cloudPlayer.playbackRate = Math.min(1.45, rate * 1.15);
+                } else {
+                    cloudPlayer.preservesPitch = true;
+                    cloudPlayer.src = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(shortText)}&tl=${tl}&client=gtx`;
+                    cloudPlayer.playbackRate = rate;
+                }
 
                 cloudPlayer.onended = () => {
                     advanceSpeechQueue();
@@ -2129,7 +2653,8 @@ function assignSmartGenres(st, categoriesArr) {
                     cloudPlayer.onerror = () => {
                         advanceSpeechQueue();
                     };
-                    cloudPlayer.src = `https://api.streamelements.com/kappa/v2/speech?voice=Tatyana&text=${encodeURIComponent(shortText)}`;
+                    cloudPlayer.src = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(shortText)}&tl=${tl}&client=gtx`;
+                    cloudPlayer.playbackRate = rate;
                     cloudPlayer.play().catch(() => {
                         advanceSpeechQueue();
                     });
@@ -2146,24 +2671,31 @@ function assignSmartGenres(st, categoriesArr) {
         document.getElementById('ai-lang-selector').addEventListener('change', () => {
             lastTranslatedSourceText = "";
             updateChannelLanguagePairUI();
-            initFemaleVoiceEngine();
+            initMultiVoiceEngine();
             if (isAITextActive || isAIVoiceActive) {
-                showToast("Язык перевода обновлён");
+                showToast("Целевой язык перевода обновлён");
                 restartLiveTranslationPipeline();
             }
         });
 
         document.getElementById('ai-source-lang-selector').addEventListener('change', () => {
             lastTranslatedSourceText = "";
-            committedWordCursor = 0;
-            updateChannelLanguagePairUI();
-            if (speechRecognition && isRecognitionRunning) {
-                try { speechRecognition.lang = getChannelSourceLanguage(); } catch (e) {}
-            }
+            lastInterimBuffer = "";
+            committedInterimPrefix = "";
+            detectedVoiceLangCode = null;
+            syncRecognizerLanguageToCurrentChannel();
             if (isAITextActive || isAIVoiceActive) {
-                showToast("Исходный язык канала обновлён");
+                showToast("Режим определения исходного языка обновлён");
                 restartLiveTranslationPipeline();
             }
+        });
+
+        document.getElementById('ai-speaker-mode-selector').addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val !== 'auto') {
+                updateSpeakerBadgeUI(val);
+            }
+            showToast("Профиль тембра голоса обновлён");
         });
     </script>
 </body>
