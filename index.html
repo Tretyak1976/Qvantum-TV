@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUANTUM TV :: GOD MODE</title>
+    <!-- Глобальное отключение Referer: открывает доступ к облачному женскому голосу Google TTS и защищенным IPTV-потокам -->
+    <meta name="referrer" content="no-referrer">
+    <title>QUANTUM TV :: GOD MODE + AI RUSSIAN VOICEOVER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -22,12 +24,14 @@
         :root { --accent-primary: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.6); --accent-rgb: 59, 130, 246; --accent-gradient: linear-gradient(135deg, rgba(var(--accent-rgb), 0.25) 0%, rgba(16, 185, 129, 0.2) 100%); }
         body { font-family: 'Inter', sans-serif; background-color: #000000; color: #fff; margin: 0; overflow: hidden; }
         
+        /* Скрываем стандартные браузерные субтитры во время работы AI-переводчика, сохраняя генерацию событий oncuechange */
+        body.ai-subs-intercept video::cue { opacity: 0 !important; background: transparent !important; color: transparent !important; }
+
         .glass-panel { background: var(--glass); border: 1px solid var(--glassBorder); border-radius: 20px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9); transform: translateZ(0); }
         #ui-wrapper { transition: opacity 0.3s ease-out; } .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
         
         .is-fullscreen #left-panel, .is-fullscreen #right-panel { display: none !important; }
         
-        /* Сворачивание панелей */
         .panel-collapse-left { transform: translateX(calc(-100% - 20px)); }
         .panel-collapse-right { transform: translateX(calc(100% + 20px)); }
         .toggle-panel-btn { position: absolute; top: 50%; width: 24px; height: 50px; margin-top: -25px; background: #15151a; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #9ca3af; transition: all 0.3s; z-index: 50; }
@@ -41,7 +45,6 @@
         input[type=range].volume-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: pointer; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); }
         input[type=range].volume-slider::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
 
-        /* Курсор default для ползунка, так как он больше не перематывается */
         input[type=range].progress-slider { -webkit-appearance: none; background: transparent; width: 100%; position: absolute; top: -5px; left: 0; z-index: 50; cursor: default; }
         input[type=range].progress-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--accent-primary); cursor: default; margin-top: -5px; box-shadow: 0 0 12px var(--accent-glow); transition: transform 0.1s; }
         input[type=range].progress-slider:hover::-webkit-slider-thumb { transform: scale(1.3); }
@@ -68,21 +71,62 @@
         .choices__heading { color: #9ca3af !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
         .choices__button { border-left: 1px solid rgba(255,255,255,0.2) !important; opacity: 0.7 !important; }
         .choices__button:hover { opacity: 1 !important; }
+
+        @keyframes voiceWave {
+            0%, 100% { height: 4px; }
+            50% { height: 14px; }
+        }
+        .voice-bar {
+            width: 3px;
+            height: 4px;
+            background-color: #ec4899;
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .speaking .voice-bar:nth-child(1) { animation: voiceWave 0.5s infinite ease-in-out 0.1s; }
+        .speaking .voice-bar:nth-child(2) { animation: voiceWave 0.5s infinite ease-in-out 0.25s; }
+        .speaking .voice-bar:nth-child(3) { animation: voiceWave 0.5s infinite ease-in-out 0.4s; }
     </style>
 </head>
 <body class="h-screen w-screen relative overflow-hidden bg-black select-none">
 
     <div id="globe-container" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></div>
     
-    <div id="video-container" class="absolute inset-0 w-full h-full z-10 bg-black flex items-center justify-center cursor-pointer" ondblclick="toggleNativeFullscreen()">
-        <div id="video-loading-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black transition-opacity duration-200 pointer-events-none hidden">
+    <div id="video-container" class="absolute inset-0 w-full h-full z-10 bg-black flex items-center justify-center cursor-pointer" onclick="handleVideoScreenClick(event)" ondblclick="toggleNativeFullscreen()">
+        <div id="video-loading-overlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 transition-opacity duration-200 pointer-events-none hidden">
             <div class="flex flex-col items-center gap-3">
                 <div class="w-10 h-10 rounded-full border-4 border-blue-600/30 border-t-blue-500 animate-spin"></div>
                 <span id="loading-text" class="text-blue-400 font-mono text-xs tracking-widest font-bold uppercase animate-pulse">Соединение...</span>
             </div>
         </div>
+
+        <button id="unmute-overlay-btn" onclick="forceUnmuteFromBanner(event)" class="hidden absolute top-6 left-1/2 transform -translate-x-1/2 z-40 bg-blue-600/90 hover:bg-blue-500 text-white px-5 py-2.5 rounded-full text-xs font-extrabold tracking-wide shadow-[0_0_25px_rgba(59,130,246,0.8)] border border-white/20 flex items-center gap-2 pointer-events-auto animate-bounce">
+            <span>🔇 Нажмите здесь, чтобы включить звук</span>
+        </button>
+
         <video id="tv-player" class="w-full h-full object-contain bg-black transition-opacity duration-200 opacity-0" autoplay playsinline preload="auto"></video>
+        
+        <!-- Контейнер для переведенных русских субтитров (показывается ТОЛЬКО когда звучит реальная речь, в паузах скрыт) -->
+        <div id="ai-subtitles-container" class="absolute bottom-32 md:bottom-28 left-1/2 transform -translate-x-1/2 w-[94%] max-w-3xl text-center z-40 pointer-events-none hidden transition-all duration-300">
+            <div class="inline-flex flex-col items-center gap-1.5 bg-black/85 text-white px-5 py-3 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] backdrop-blur-md border border-white/15 max-w-full">
+                <div class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-blue-400">
+                    <span id="ai-sub-badge" class="bg-blue-500/20 border border-blue-500/40 px-2 py-0.5 rounded-full text-blue-300 font-bold">🎙️ ГОЛОС ЭФИРА</span>
+                    <span id="ai-sub-lang-pair" class="text-gray-300">AUTO ➔ RU</span>
+                    <div id="ai-voice-indicator" class="hidden items-center gap-1 text-pink-400 font-bold ml-1">
+                        <span class="voice-bar"></span>
+                        <span class="voice-bar"></span>
+                        <span class="voice-bar"></span>
+                        <span class="text-[9px] ml-0.5">ЖЕНСКИЙ ГОЛОС</span>
+                    </div>
+                </div>
+                <div id="ai-subtitles-orig" class="text-xs text-gray-400 italic font-normal line-clamp-1 max-w-2xl"></div>
+                <div id="ai-subtitles-text" class="text-sm md:text-lg font-bold text-white leading-snug drop-shadow"></div>
+            </div>
+        </div>
     </div>
+
+    <!-- Аудио-плеер для облачной женской русской озвучки -->
+    <audio id="cloud-tts-player" preload="none"></audio>
 
     <div id="toast-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -101,7 +145,7 @@
                     <div class="flex-1 flex justify-between items-center">
                         <div>
                             <h1 class="text-base font-extrabold tracking-wider text-white flex items-center gap-2">QUANTUM TV</h1>
-                            <p class="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Global TOP Network</p>
+                            <p class="text-[10px] text-blue-400 font-bold tracking-widest uppercase">Global AI Translator</p>
                         </div>
                         <div id="location-flag-container" class="hidden flex items-center">
                             <div class="flag-circle" id="current-flag">🌍</div>
@@ -126,7 +170,6 @@
             <aside class="w-full glass-panel flex-1 pointer-events-auto flex flex-col overflow-hidden">
                 <div class="p-4 flex flex-col gap-3 shrink-0 h-full">
                     
-                    <!-- 1. Регионы (сверху, z-50 для приоритета перекрытия) -->
                     <div class="flex flex-col gap-2 relative z-50">
                         <div class="flex justify-between items-center px-1">
                             <span class="text-[10px] font-bold text-gray-400 uppercase">Регион</span>
@@ -137,12 +180,10 @@
                         <select id="filter-country" multiple class="hidden" placeholder="🌍 Поиск стран..."></select>
                     </div>
 
-                    <!-- 2. Жанры (посередине, z-40) -->
                     <div class="flex flex-col gap-2 relative z-40">
                         <select id="filter-genre" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-3 pr-8 py-2 text-xs text-white focus:outline-none hover:border-white/30 cursor-pointer"><option value="">Все категории (Жанры)</option></select>
                     </div>
 
-                    <!-- 3. Поиск (снизу, z-30) -->
                     <div class="relative w-full z-30">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
                         <input type="text" id="input-search" placeholder="Мгновенный поиск..." autocomplete="off" class="w-full bg-[#15151a] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none transition hover:border-white/30 focus:border-[var(--accent-primary)] mb-2">
@@ -182,13 +223,11 @@
         <footer class="absolute bottom-4 left-4 right-4 z-40 pointer-events-none transition-all duration-700 max-w-7xl mx-auto">
             <div class="glass-panel w-full p-4 pointer-events-auto flex flex-col gap-3 shadow-2xl relative mt-2">
                 
-                <!-- Таймеры статуса -->
                 <div id="time-indicator" class="absolute -top-7 left-1 right-1 flex justify-between z-50 pointer-events-none transition-opacity duration-300">
                     <span id="time-current" class="text-[10px] text-blue-400 font-mono font-bold px-2 py-0.5 rounded bg-black/60 border border-white/10 opacity-0 transition-opacity">LIVE</span>
                     <span id="time-duration" class="text-[10px] text-gray-400 font-mono font-bold px-2 py-0.5 rounded bg-black/60 border border-white/10 opacity-0 transition-opacity">Прямой эфир</span>
                 </div>
 
-                <!-- Плавающая подсказка "Прямой эфир" над ползунком -->
                 <div id="slider-tooltip" class="absolute -top-6 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded hidden transform -translate-x-1/2 z-[60] pointer-events-none whitespace-nowrap shadow-[0_0_15px_rgba(59,130,246,0.5)]">Прямой эфир (LIVE)</div>
                 
                 <input type="range" id="video-progress" class="progress-slider" min="0" max="100" value="100" step="0.1">
@@ -209,6 +248,15 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="flex md:hidden items-center gap-1.5 shrink-0">
+                            <button id="btn-quick-sub-mob" onclick="toggleAIText()" class="bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition">
+                                <span>RU СУБ</span>
+                            </button>
+                            <button id="btn-quick-voice-mob" onclick="toggleAIVoice()" class="bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition">
+                                <span>👩 ГОЛОС</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="w-full md:w-auto flex items-center justify-center gap-2 sm:gap-4 order-3 md:order-none pt-2 md:pt-0 border-t border-white/10 md:border-t-0">
@@ -217,31 +265,42 @@
                         <button id="btn-next" class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 active:scale-90 transition shrink-0"><i data-lucide="skip-forward" class="w-4 h-4 fill-white"></i></button>
                     </div>
 
-                    <div class="hidden md:flex md:w-1/3 md:flex-1 items-center justify-end gap-3 min-w-0">
-                        <button id="btn-fullscreen" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-2" onclick="toggleNativeFullscreen()" title="Двойной клик по видео = Fullscreen">
+                    <div class="hidden md:flex md:w-1/3 md:flex-1 items-center justify-end gap-2.5 min-w-0">
+                        
+                        <button id="btn-quick-sub" onclick="toggleAIText()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Переводить только голос эфира в русские субтитры">
+                            <i data-lucide="message-square" class="w-4 h-4 text-blue-400"></i>
+                            <span>RU Субтитры</span>
+                        </button>
+
+                        <button id="btn-quick-voice" onclick="toggleAIVoice()" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0" title="Синхронный перевод голоса русским женским голосом">
+                            <i data-lucide="volume-2" class="w-4 h-4 text-pink-400"></i>
+                            <span>👩 Голос RU</span>
+                        </button>
+
+                        <button id="btn-fullscreen" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-2 shrink-0" onclick="toggleNativeFullscreen()" title="Двойной клик по видео = Fullscreen">
                             <i data-lucide="maximize" class="w-4 h-4"></i>
                         </button>
 
-                        <div class="relative z-[9999]">
+                        <div class="relative z-[9999] shrink-0">
                             <button id="btn-settings" class="bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-400 p-2 rounded-xl border border-white/10 transition flex items-center" onclick="document.getElementById('settings-menu').classList.toggle('hidden')">
                                 <i data-lucide="settings" class="w-4 h-4"></i>
                             </button>
                             
-                            <div id="settings-menu" class="hidden absolute bottom-[calc(100%+20px)] right-0 bg-[#15151a] border border-white/10 rounded-xl p-4 w-60 flex flex-col gap-4 shadow-[0_10px_50px_rgba(0,0,0,0.9)] pointer-events-auto">
+                            <div id="settings-menu" class="hidden absolute bottom-[calc(100%+20px)] right-0 bg-[#15151a] border border-white/10 rounded-xl p-4 w-72 flex flex-col gap-3.5 shadow-[0_10px_50px_rgba(0,0,0,0.95)] pointer-events-auto">
                                 
-                                <div class="flex flex-col gap-2">
+                                <div class="flex flex-col gap-1.5">
                                     <div class="flex justify-between items-center">
                                         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="monitor-play" class="w-3 h-3"></i> Качество видео</span>
                                         <span id="current-res-badge" class="text-[9px] font-mono text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20">MAX</span>
                                     </div>
-                                    <select id="quality-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-2 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
+                                    <select id="quality-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
                                         <option value="-1">Авто (Максимальное)</option>
                                     </select>
                                 </div>
                                 
-                                <div class="flex flex-col gap-2 border-t border-white/10 pt-3">
+                                <div class="flex flex-col gap-1.5 border-t border-white/10 pt-2.5">
                                     <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Таймер сна</span>
-                                    <select id="sleep-timer-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-2 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center" onchange="setSleepTimer(this.value)">
+                                    <select id="sleep-timer-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center" onchange="setSleepTimer(this.value)">
                                         <option value="0">Выключен</option>
                                         <option value="15">15 минут</option>
                                         <option value="30">30 минут</option>
@@ -250,18 +309,71 @@
                                     </select>
                                 </div>
 
-                                <div class="flex items-center justify-between border-t border-white/10 pt-3">
-                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="message-square" class="w-3 h-3"></i> Субтитры</span>
+                                <div class="flex items-center justify-between border-t border-white/10 pt-2.5">
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="message-square" class="w-3 h-3"></i> Оригинальные субтитры</span>
                                     <button id="btn-subtitles" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleSubtitles()">
                                         <div id="sub-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
                                     </button>
                                 </div>
+
+                                <div class="flex flex-col gap-2.5 border-t border-white/10 pt-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1"><i data-lucide="languages" class="w-3.5 h-3.5"></i> AI Перевод голоса (RU)</span>
+                                        <span id="detected-voice-badge" class="text-[9px] text-pink-400 bg-pink-500/10 border border-pink-500/20 px-1.5 py-0.5 rounded font-mono">👩 Женский RU</span>
+                                    </div>
+                                    
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[9px] text-gray-400 uppercase">Исходный язык канала:</span>
+                                        <select id="ai-source-lang-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
+                                            <option value="auto">🌍 Авто (По стране канала)</option>
+                                            <option value="en-US">🇬🇧 English (Английский)</option>
+                                            <option value="de-DE">🇩🇪 Deutsch (Немецкий)</option>
+                                            <option value="es-ES">🇪🇸 Español (Испанский)</option>
+                                            <option value="fr-FR">🇫🇷 Français (Французский)</option>
+                                            <option value="it-IT">🇮🇹 Italiano (Итальянский)</option>
+                                            <option value="tr-TR">🇹🇷 Türkçe (Турецкий)</option>
+                                            <option value="zh-CN">🇨🇳 中文 (Китайский)</option>
+                                            <option value="ja-JP">🇯🇵 日本語 (Японский)</option>
+                                            <option value="ko-KR">🇰🇷 한국어 (Корейский)</option>
+                                            <option value="ar-SA">🇸🇦 العربية (Арабский)</option>
+                                            <option value="pt-BR">🇧🇷 Português (Португальский)</option>
+                                            <option value="pl-PL">🇵🇱 Polski (Польский)</option>
+                                            <option value="hi-IN">🇮🇳 हिन्दी (Хинди)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-[9px] text-gray-400 uppercase">Язык перевода и озвучки:</span>
+                                        <select id="ai-lang-selector" style="color-scheme: dark;" class="w-full bg-[#0a0a0e] border border-white/10 rounded-lg py-1.5 px-2 text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer appearance-none text-center">
+                                            <option value="ru-RU" selected>🇷🇺 Русский (Женский голос)</option>
+                                            <option value="en-US">🇬🇧 English</option>
+                                            <option value="es-ES">🇪🇸 Español</option>
+                                            <option value="de-DE">🇩🇪 Deutsch</option>
+                                            <option value="zh-CN">🇨🇳 中文</option>
+                                            <option value="fr-FR">🇫🇷 Français</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex items-center justify-between pt-1">
+                                        <span class="text-[11px] text-gray-200 font-medium">Русские субтитры</span>
+                                        <button id="btn-ai-text" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIText()">
+                                            <div id="ai-text-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-gray-200 font-medium">Женская озвучка (RU)</span>
+                                        <button id="btn-ai-voice" class="w-9 h-5 bg-gray-600 rounded-full relative transition-colors duration-300 focus:outline-none" onclick="toggleAIVoice()">
+                                            <div id="ai-voice-knob" class="w-3.5 h-3.5 bg-white rounded-full absolute left-1 top-0.5 transition-transform duration-300"></div>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 bg-[#15151a] p-2 rounded-xl border border-white/10">
+                        <div class="flex items-center gap-2 bg-[#15151a] p-2 rounded-xl border border-white/10 shrink-0">
                             <button class="text-gray-400 hover:text-white transition p-0.5" onclick="toggleMute()"><i data-lucide="volume-2" id="icon-volume-desktop" class="w-4 h-4"></i></button>
-                            <input type="range" id="master-volume-desktop" min="0" max="1" step="0.01" value="0.8" class="w-24 volume-slider">
+                            <input type="range" id="master-volume-desktop" min="0" max="1" step="0.01" value="0.8" class="w-20 volume-slider">
                         </div>
                     </div>
                 </div>
@@ -285,6 +397,48 @@
             "TJ": "Таджикистан", "TH": "Таиланд", "TN": "Тунис", "TR": "Турция", "UA": "Украина", "AE": "ОАЭ", "GB": "Великобритания", "US": "США", "UY": "Уругвай", "UZ": "Узбекистан",
             "VE": "Венесуэла", "VN": "Вьетнам", "YE": "Йемен", "INT": "Международные", "UK": "Великобритания"
         };
+
+        const COUNTRY_TO_LANG_MAP = {
+            "US": "en-US", "GB": "en-GB", "UK": "en-GB", "AU": "en-AU", "CA": "en-CA", "IE": "en-IE", "NZ": "en-NZ", "SG": "en-SG", "ZA": "en-ZA", "JM": "en-JM", "NG": "en-NG", "KE": "en-KE", "PH": "en-PH", "INT": "en-US", "Global": "en-US",
+            "DE": "de-DE", "AT": "de-AT", "CH": "de-CH", "LU": "de-DE",
+            "FR": "fr-FR", "BE": "fr-BE", "MC": "fr-FR",
+            "ES": "es-ES", "MX": "es-MX", "AR": "es-AR", "CO": "es-CO", "CL": "es-CL", "PE": "es-PE", "VE": "es-VE", "EC": "es-EC", "GT": "es-GT", "CU": "es-CU", "BO": "es-BO", "DO": "es-DO", "HN": "es-HN", "PY": "es-PY", "SV": "es-SV", "NI": "es-NI", "CR": "es-CR", "PA": "es-PA", "UY": "es-UY", "PR": "es-PR",
+            "IT": "it-IT",
+            "PT": "pt-PT", "BR": "pt-BR",
+            "TR": "tr-TR", "AZ": "az-AZ",
+            "CN": "zh-CN", "HK": "zh-HK", "TW": "zh-TW",
+            "JP": "ja-JP",
+            "KR": "ko-KR",
+            "PL": "pl-PL",
+            "NL": "nl-NL",
+            "SE": "sv-SE", "NO": "nb-NO", "DK": "da-DK", "FI": "fi-FI", "IS": "is-IS",
+            "GR": "el-GR", "CY": "el-GR",
+            "CZ": "cs-CZ", "SK": "sk-SK",
+            "HU": "hu-HU",
+            "RO": "ro-RO", "MD": "ro-RO",
+            "BG": "bg-BG", "RS": "sr-RS", "HR": "hr-HR", "BA": "bs-BA", "SI": "sl-SI", "MK": "mk-MK", "ME": "sr-RS", "AL": "sq-AL",
+            "UA": "uk-UA", "BY": "ru-RU", "RU": "ru-RU", "KZ": "ru-RU", "UZ": "uz-UZ", "TJ": "ru-RU", "AM": "hy-AM", "GE": "ka-GE",
+            "SA": "ar-SA", "AE": "ar-AE", "EG": "ar-EG", "QA": "ar-QA", "KW": "ar-KW", "BH": "ar-BH", "OM": "ar-OM", "JO": "ar-JO", "LB": "ar-LB", "IQ": "ar-IQ", "SY": "ar-SY", "MA": "ar-MA", "DZ": "ar-DZ", "TN": "ar-TN", "LY": "ar-LY", "YE": "ar-YE",
+            "IR": "fa-IR", "AF": "fa-IR",
+            "IL": "he-IL",
+            "IN": "hi-IN", "PK": "ur-PK", "BD": "bn-BD", "LK": "si-LK",
+            "TH": "th-TH", "VN": "vi-VN", "ID": "id-ID", "MY": "ms-MY",
+            "EE": "et-EE", "LV": "lv-LV", "LT": "lt-LT"
+        };
+
+        const GUARANTEED_WORKING_CHANNELS = [
+            { name: "DW English (Deutsche Welle)", country: "DE", url: "https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8", tags: "news", smartGenre: "Новости", score: 9900, likes: 54200 },
+            { name: "DW Deutsch", country: "DE", url: "https://dwamdstream104.akamaized.net/hls/live/2015530/dwstream104/index.m3u8", tags: "news", smartGenre: "Новости", score: 9850, likes: 49800 },
+            { name: "DW Español", country: "ES", url: "https://dwamdstream103.akamaized.net/hls/live/2015526/dwstream103/index.m3u8", tags: "news", smartGenre: "Новости", score: 9800, likes: 46100 },
+            { name: "DW Arabic", country: "AE", url: "https://dwamdstream106.akamaized.net/hls/live/2015531/dwstream106/index.m3u8", tags: "news", smartGenre: "Новости", score: 9750, likes: 41000 },
+            { name: "France 24 English", country: "FR", url: "https://Amg00106-france24-france24en-samsunguk-qvpp8.amagi.tv/playlist/amg00106-france24-france24en-samsunguk/playlist.m3u8", tags: "news", smartGenre: "Новости", score: 9700, likes: 51200 },
+            { name: "Red Bull TV Global", country: "AT", url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8", tags: "sports, entertainment", smartGenre: "Спорт", score: 9650, likes: 62300 },
+            { name: "NASA TV Public", country: "US", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8", tags: "science, documentary", smartGenre: "Познавательное", score: 9600, likes: 58900 },
+            { name: "Al Jazeera English", country: "QA", url: "https://live-hls-web-aje.getaj.net/AJE/index.m3u8", tags: "news", smartGenre: "Новости", score: 9550, likes: 48700 },
+            { name: "TRT World HD", country: "TR", url: "https://tv-trtworld.medya.trt.com.tr/master.m3u8", tags: "news", smartGenre: "Новости", score: 9500, likes: 44300 },
+            { name: "NHK World Japan", country: "JP", url: "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8", tags: "news, documentary", smartGenre: "Познавательное", score: 9450, likes: 47500 },
+            { name: "CGTN Global", country: "CN", url: "https://news.cgtn.com/resource/live/english/cgtn-news.m3u8", tags: "news", smartGenre: "Новости", score: 9400, likes: 42100 }
+        ];
 
         const TOP_TIER_NETWORKS = [
             'bbc', 'cnn', 'discovery', 'national geographic', 'eurosport', 'mtv', 'hbo', 'fox', 'bloomberg', 'dw', 'france 24',
@@ -310,7 +464,6 @@
         let choicesInstance = null; 
         let subtitlesEnabled = false; 
         let sleepTimerObj = null;
-        
         let connectTimeout = null;
 
         let favorites = JSON.parse(localStorage.getItem('quantum_tv_favs') || '[]');
@@ -331,10 +484,7 @@
         };
 
         const video = document.getElementById('tv-player');
-        
-        // ГЛОБАЛЬНЫЙ ДВИЖОК HLS
         let hlsInstance = null;
-        
         let isPlaying = false, isBuffering = false;            
         const ITEM_HEIGHT = 65; let scrollTimeout; 
 
@@ -344,6 +494,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
             init3DBackground();
+            initFemaleVoiceEngine();
             setupZenMode(); 
             setupNetworkListeners(); 
             setupProgressSlider(); 
@@ -358,20 +509,37 @@
             document.getElementById('stations-list').addEventListener('scroll', handleScroll);
         });
 
-        // ВИЗУАЛЬНЫЙ СЛАЙДЕР "ПРЯМОЙ ЭФИР" БЕЗ ПЕРЕМОТКИ
+        function handleVideoScreenClick(e) {
+            if (e.target.closest('#unmute-overlay-btn')) return;
+            if (video.muted) {
+                forceUnmuteFromBanner(e);
+                return;
+            }
+            togglePlay();
+        }
+
+        function forceUnmuteFromBanner(e) {
+            if (e) e.stopPropagation();
+            video.muted = false;
+            syncVolume(lastVolume || 0.8);
+            document.getElementById('unmute-overlay-btn').classList.add('hidden');
+            if (video.paused) {
+                video.play().catch(() => {});
+            }
+            showToast("🔊 Звук включен");
+        }
+
         function setupProgressSlider() {
             const progressSlider = document.getElementById('video-progress');
             const timeCurrentEl = document.getElementById('time-current');
             const timeDurationEl = document.getElementById('time-duration');
             const tooltip = document.getElementById('slider-tooltip');
 
-            // Отключаем возможность менять значение ползунка
             progressSlider.addEventListener('input', (e) => {
                 e.preventDefault();
                 progressSlider.value = 100; 
             });
 
-            // Показываем красивую плавающую подсказку "LIVE" при наведении
             progressSlider.addEventListener('mousemove', (e) => {
                 const rect = progressSlider.getBoundingClientRect();
                 let val = ((e.clientX - rect.left) / rect.width) * 100;
@@ -387,46 +555,66 @@
             video.addEventListener('timeupdate', () => {
                 timeCurrentEl.classList.remove('opacity-0');
                 timeDurationEl.classList.remove('opacity-0');
-
-                // Всегда показываем статус прямого эфира
                 timeCurrentEl.innerText = "LIVE";
                 timeDurationEl.innerText = "Прямой эфир";
-
-                // Ползунок всегда 100% (конец эфира)
                 progressSlider.value = 100;
                 progressSlider.style.background = `linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)`;
             });
         }
 
-        // ИНИЦИАЛИЗАЦИЯ ДВИЖКА (Ультра-скоростной режим без бэкапа)
         function initHlsCore() {
             if (!Hls.isSupported()) return;
             
             hlsInstance = new Hls({ 
-                maxBufferLength: 10,          
-                maxMaxBufferLength: 20, 
-                backBufferLength: 0, // СТРОГО 0. Не сохраняем прошлое, экономим память.
-                manifestLoadingTimeOut: 1500, 
-                manifestLoadingMaxRetry: 0,   
+                maxBufferLength: 12,          
+                maxMaxBufferLength: 25, 
+                backBufferLength: 0, 
+                manifestLoadingTimeOut: 6000, 
+                manifestLoadingMaxRetry: 1,   
                 fragLoadingTimeOut: 15000,    
                 fragLoadingMaxRetry: 2, 
                 enableWorker: true, 
-                lowLatencyMode: true, // Включаем режим низкой задержки
+                lowLatencyMode: true, 
                 startFragPrefetch: true,      
                 testBandwidth: false,         
                 startLevel: -1,               
                 abrEwmaDefaultEstimate: 5000000, 
-                capLevelToPlayerSize: true    
+                capLevelToPlayerSize: true,
+                enableWebVTT: true,
+                enableIMSC1: true,
+                enableCEA708Captions: true
             });
 
             hlsInstance.on(Hls.Events.MANIFEST_PARSED, function(event, data) { 
                 buildQualityScale(data.levels);
+                if (data.subtitleTracks && data.subtitleTracks.length > 0) {
+                    hlsInstance.subtitleTrack = 0;
+                }
                 applySubtitles(); 
+                setTimeout(attachTextTrackListeners, 300);
                 attemptPlay(); 
             });
 
-            hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function() {
+            hlsInstance.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(event, data) {
+                if (data.subtitleTracks && data.subtitleTracks.length > 0) {
+                    hlsInstance.subtitleTrack = 0;
+                }
                 applySubtitles();
+                setTimeout(attachTextTrackListeners, 300);
+            });
+
+            hlsInstance.on(Hls.Events.CUES_PARSED, function(event, data) {
+                if (!isAITextActive && !isAIVoiceActive) return;
+                if (data && data.cues && data.cues.length > 0) {
+                    const lastCue = data.cues[data.cues.length - 1];
+                    if (lastCue && lastCue.text) {
+                        const voiceOnly = extractVoiceOnly(lastCue.text);
+                        if (voiceOnly.length > 1) {
+                            setSubtitleSourceBadge("📝 ГОЛОС (СУБТИТРЫ)");
+                            handleIncomingForeignPhrase(voiceOnly);
+                        }
+                    }
+                }
             });
 
             hlsInstance.on(Hls.Events.LEVEL_SWITCHED, function(event, data) {
@@ -457,11 +645,13 @@
             hlsInstance.attachMedia(video);
             
             video.addEventListener('playing', () => { 
-                isBuffering = false; updatePlayBtn(); 
+                isBuffering = false; isPlaying = true; updatePlayBtn(); 
                 is3DActive = false; document.getElementById('globe-container').style.display = 'none';
                 clearTimeout(connectTimeout); 
                 resetZenTimer(); hideVideoLoader(); 
-                if (hlsInstance) hlsInstance.startLoad(); 
+                if (isAITextActive || isAIVoiceActive) {
+                    restartLiveTranslationPipeline();
+                }
             });
             
             video.addEventListener('waiting', () => { 
@@ -472,10 +662,14 @@
             video.addEventListener('pause', () => { 
                 isBuffering = false; updatePlayBtn(); clearTimeout(zenTimer); toggleUI(true); 
                 is3DActive = true; document.getElementById('globe-container').style.display = 'block';
-                if (hlsInstance) hlsInstance.stopLoad(); 
             });
 
-            video.textTracks.addEventListener('addtrack', applySubtitles);
+            video.textTracks.addEventListener('addtrack', () => {
+                applySubtitles();
+                if (isAITextActive || isAIVoiceActive) {
+                    attachTextTrackListeners();
+                }
+            });
         }
 
         function setupNetworkListeners() {
@@ -531,12 +725,23 @@
         }
 
         function applySubtitles() {
+            const intercepting = isAITextActive || isAIVoiceActive;
+            document.body.classList.toggle('ai-subs-intercept', intercepting);
+
             if (hlsInstance) { 
-                hlsInstance.subtitleTrack = subtitlesEnabled ? 0 : -1; 
-                hlsInstance.subtitleDisplay = subtitlesEnabled; 
-            } else if (video.textTracks) { 
+                if (intercepting) {
+                    if (hlsInstance.subtitleTracks && hlsInstance.subtitleTracks.length > 0 && hlsInstance.subtitleTrack === -1) {
+                        hlsInstance.subtitleTrack = 0;
+                    }
+                    hlsInstance.subtitleDisplay = true; 
+                } else {
+                    hlsInstance.subtitleTrack = subtitlesEnabled ? 0 : -1; 
+                    hlsInstance.subtitleDisplay = subtitlesEnabled; 
+                }
+            }
+            if (video.textTracks) { 
                 for (let i = 0; i < video.textTracks.length; i++) {
-                    video.textTracks[i].mode = subtitlesEnabled ? 'showing' : 'hidden'; 
+                    video.textTracks[i].mode = intercepting ? 'showing' : (subtitlesEnabled ? 'showing' : 'disabled'); 
                 }
             }
         }
@@ -568,7 +773,12 @@
         function resetZenTimer() {
             if (isUIHidden) toggleUI(true);
             clearTimeout(zenTimer);
-            if (isPlaying && !document.activeElement.closest('.choices') && !document.querySelector('.choices.is-open') && !document.activeElement.matches('input, select') && !document.getElementById('settings-menu').classList.contains('hidden') === false) { 
+            const activeEl = document.activeElement;
+            const isChoicesFocused = activeEl && activeEl.closest && activeEl.closest('.choices');
+            const isInputFocused = activeEl && activeEl.matches && activeEl.matches('input, select');
+            const isSettingsOpen = !document.getElementById('settings-menu').classList.contains('hidden');
+
+            if (isPlaying && !isChoicesFocused && !document.querySelector('.choices.is-open') && !isInputFocused && !isSettingsOpen) { 
                 zenTimer = setTimeout(() => { toggleUI(false); }, 5000); 
             }
         }
@@ -583,12 +793,22 @@
         }
 
         function attemptPlay() {
-            video.play().catch(e => {
+            video.play().then(() => {
+                if (!video.muted) {
+                    document.getElementById('unmute-overlay-btn').classList.add('hidden');
+                }
+            }).catch(e => {
                 if (e.name === 'NotAllowedError') {
-                    isPlaying = false; isBuffering = false; updatePlayBtn(); 
-                    clearTimeout(connectTimeout); 
-                    hideVideoLoader();
-                    showToast("▶ Кликните по экрану или нажмите PLAY");
+                    video.muted = true;
+                    document.getElementById('unmute-overlay-btn').classList.remove('hidden');
+                    video.play().then(() => {
+                        hideVideoLoader();
+                    }).catch(() => {
+                        isPlaying = false; isBuffering = false; updatePlayBtn();
+                        clearTimeout(connectTimeout);
+                        hideVideoLoader();
+                        showToast("▶ Нажмите PLAY или кликните по экрану");
+                    });
                 } else if (e.name !== 'AbortError') { 
                     handlePlayError(false); 
                 }
@@ -597,11 +817,15 @@
 
         function selectStation(st) { 
             if (!st) return;
-            if (currentStation && currentStation.id === st.id && isPlaying) return;
+            if (currentStation && currentStation.id === st.id && isPlaying && !video.paused) return;
             
             prepareStation(st); 
+            clearSpeechQueue();
+            hideSubtitleOverlayInSilence();
+            lastTranslatedSourceText = "";
+            committedWordCursor = 0;
             
-            document.getElementById('loading-text').innerText = "Проверка сигнала...";
+            document.getElementById('loading-text').innerText = "Подключение к каналу...";
             showVideoLoader();
 
             const qSelect = document.getElementById('quality-selector');
@@ -612,24 +836,27 @@
             document.getElementById('video-progress').value = 100;
             document.getElementById('video-progress').style.background = 'linear-gradient(to right, var(--accent-primary) 100%, rgba(255,255,255,0.2) 100%)';
 
+            isBuffering = true; 
+            isPlaying = true; 
+            updatePlayBtn();
+
             clearTimeout(connectTimeout);
             connectTimeout = setTimeout(() => {
-                if (!isPlaying && isBuffering) {
-                    showToast("🔴 Станция не отвечает. Переключаю...");
+                if (isBuffering || video.readyState < 2) {
+                    showToast("🔴 Канал не отвечает. Переключаю на следующий...");
                     handlePlayError(true); 
                 }
-            }, 6000); 
+            }, 8000); 
 
             if (st.url.includes('.m3u8') && typeof Hls !== 'undefined' && Hls.isSupported()) {
                 if (!hlsInstance) initHlsCore();
-                
                 if (hlsInstance.media !== video) hlsInstance.attachMedia(video);
                 
                 hlsInstance.stopLoad();
                 hlsInstance.loadSource(st.url);
-                
+                hlsInstance.startLoad();
             } else {
-                if(hlsInstance) hlsInstance.detachMedia();
+                if (hlsInstance) hlsInstance.detachMedia();
                 video.src = st.url;
                 video.addEventListener('loadedmetadata', function() { 
                     resBadge.innerText = video.videoHeight ? `${video.videoHeight}p` : 'DIRECT';
@@ -638,7 +865,10 @@
                 }, {once:true});
             }
 
-            isBuffering = true; isPlaying = true; updatePlayBtn();
+            if (isAITextActive || isAIVoiceActive) {
+                updateChannelLanguagePairUI();
+                restartLiveTranslationPipeline();
+            }
         }
 
         function buildQualityScale(levels) {
@@ -670,10 +900,25 @@
         }
 
         function togglePlay() { 
+            if (video.muted) {
+                video.muted = false;
+                document.getElementById('unmute-overlay-btn').classList.add('hidden');
+            }
             if (!currentStation && stationsData.length > 0) return selectStation(stationsData[0]); 
             if (!video.src && !hlsInstance) { if(currentStation) selectStation(currentStation); return; }
-            if (isPlaying) { video.pause(); isPlaying = false; updatePlayBtn(); } 
-            else { isPlaying = true; isBuffering = true; updatePlayBtn(); attemptPlay(); }
+            if (isPlaying && !video.paused) { 
+                video.pause(); 
+                isPlaying = false; 
+                if (hlsInstance) hlsInstance.stopLoad();
+                clearSpeechQueue();
+                updatePlayBtn(); 
+            } else { 
+                isPlaying = true; 
+                isBuffering = true; 
+                if (hlsInstance) hlsInstance.startLoad();
+                updatePlayBtn(); 
+                attemptPlay(); 
+            }
         }
 
         function handlePlayError(isHardError = false) {
@@ -696,7 +941,7 @@
                     }
                     if (nextIndex >= stationsData.length) nextIndex = 0; 
                     
-                    setTimeout(() => selectStation(stationsData[nextIndex]), 10);
+                    setTimeout(() => selectStation(stationsData[nextIndex]), 50);
                 } else {
                     if(hlsInstance) hlsInstance.stopLoad();
                     video.pause(); video.removeAttribute('src'); video.load();
@@ -710,12 +955,12 @@
         function updatePlayBtn() { 
             const btn = document.getElementById('btn-play');
             if (isBuffering && isPlaying) btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 fill-white animate-spin"></i>`;
-            else if (isPlaying) btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-white"></i>`;
+            else if (isPlaying && !video.paused) btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-white"></i>`;
             else btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-white ml-0.5"></i>`;
             lucide.createIcons(); 
         }
-
-        function assignSmartGenres(st, categoriesArr) {
+/* === КОНЕЦ ЧАСТИ 1 — СЮДА ВСТАВИТЬ ЧАСТЬ 2 === */
+function assignSmartGenres(st, categoriesArr) {
             st.smartGenre = 'Разное';
             
             let cats = [];
@@ -755,10 +1000,29 @@
 
         async function runClientVacuum() {
             const loader = document.getElementById('list-loader');
-            if(loader) loader.style.display = 'flex';
+            if (loader) loader.style.display = 'flex';
             
             allStationsMaster = [];
             const uniqueUrls = new Set();
+
+            // 1. Сначала добавляем проверенные мировые каналы
+            GUARANTEED_WORKING_CHANNELS.forEach((item) => {
+                const streamUrl = item.fallbackUrl || item.url;
+                uniqueUrls.add(streamUrl);
+                allStationsMaster.push({
+                    id: `tv_str_${allStationsMaster.length}`,
+                    name: item.name,
+                    country: item.country,
+                    countryName: COUNTRY_NAMES[item.country] || item.country,
+                    flag: getFlagEmoji(item.country),
+                    url: streamUrl,
+                    favicon: '',
+                    tags: item.tags,
+                    smartGenre: item.smartGenre,
+                    score: item.score,
+                    likes: item.likes
+                });
+            });
 
             try {
                 const [channelsRes, streamsRes, logosRes] = await Promise.all([
@@ -771,7 +1035,7 @@
                 const logos = await logosRes.json();
 
                 const channelMap = new Map();
-                channels.forEach(c => channelMap.set(c.id, c));
+                if (Array.isArray(channels)) channels.forEach(c => channelMap.set(c.id, c));
 
                 const logoMap = new Map();
                 if (Array.isArray(logos)) logos.forEach(l => { if (l.channel && l.url) logoMap.set(l.channel, l.url); });
@@ -798,7 +1062,7 @@
                     
                     let cCode = c.country ? c.country.toUpperCase() : null;
                     
-                    if(c.is_nsfw) c.categories = (c.categories || []).concat(['xxx']);
+                    if (c.is_nsfw) c.categories = (c.categories || []).concat(['xxx']);
 
                     let score = 1000;
                     if (isHttps) score += 500; 
@@ -847,9 +1111,16 @@
                 }
 
             } catch (e) {
-                showToast("⚠ Ошибка загрузки базы ТВ. Обновите страницу.");
+                showToast("⚠ Загружены резервные мировые каналы.");
+                stationsData = [...allStationsMaster];
+                updateStationCounts();
+                renderList();
+                initHlsCore();
+                if (stationsData.length > 0 && !currentStation) {
+                    setTimeout(() => selectStation(stationsData[0]), 50);
+                }
             } finally {
-                if(loader) loader.style.display = 'none';
+                if (loader) loader.style.display = 'none';
             }
         }
 
@@ -874,8 +1145,8 @@
 
             const countryDataMap = new Map();
             tempStations.forEach(st => {
-                if(st.country && st.country !== 'Global') { 
-                    if(!countryDataMap.has(st.country)) countryDataMap.set(st.country, { count: 0, name: st.countryName, flag: st.flag });
+                if (st.country && st.country !== 'Global') { 
+                    if (!countryDataMap.has(st.country)) countryDataMap.set(st.country, { count: 0, name: st.countryName, flag: st.flag });
                     countryDataMap.get(st.country).count += 1;
                 }
             });
@@ -935,7 +1206,7 @@
                 if (stationsData.length > 0) {
                     selectStation(stationsData[0]); 
                 } else {
-                    if(hlsInstance) { hlsInstance.stopLoad(); }
+                    if (hlsInstance) { hlsInstance.stopLoad(); }
                     video.pause(); video.removeAttribute('src'); video.load();
                     document.getElementById('player-title').innerText = "Каналы не найдены";
                 }
@@ -952,7 +1223,7 @@
                 stationsData = allStationsMaster.filter(s => favorites.includes(s.id)); stationsData.sort((a, b) => b.score - a.score); showToast("Отображено Избранное"); 
             } else { triggerFilterUpdate(null, true); return; }
             updateStationCounts(); renderList();
-            if(stationsData.length > 0) selectStation(stationsData[0]);
+            if (stationsData.length > 0) selectStation(stationsData[0]);
         }
 
         function updateStationCounts() {
@@ -974,8 +1245,8 @@
             const imgSrc = st.favicon || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E`;
             
             let descText = [];
-            if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
-            if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+            if (st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+            if (st.smartGenre !== 'Разное') descText.push(st.smartGenre);
             let displayDesc = descText.join(' • ') || 'Live TV';
 
             container.innerHTML = `<div class="p-2.5 rounded-xl flex items-center gap-3 cursor-pointer pulsing-active bg-blue-600/20 border border-blue-500 w-full relative overflow-hidden shadow-[0_0_20px_var(--accent-glow)]"><div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent"></div><div class="relative shrink-0 z-10"><img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover bg-black/80 border border-white/20" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'white\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'"></div><div class="flex flex-col flex-1 overflow-hidden z-10"><div class="flex items-center gap-1.5"><span class="text-sm font-extrabold text-white truncate">${st.name}</span><span class="flex h-2 w-2 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full dynamic-bg bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 dynamic-bg bg-blue-500"></span></span></div><div class="flex items-center gap-2"><span class="text-[10px] text-gray-300 truncate">${displayDesc}</span><span class="text-[10px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div></div><div class="flex flex-col items-end gap-1 shrink-0 z-10"><button class="btn-fav text-gray-300 hover:text-red-500 transition p-1 flex flex-col items-center" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-4 h-4 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div></div>`;
@@ -1003,8 +1274,8 @@
                 const imgSrc = st.favicon ? st.favicon : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='1.5'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E`;
                 
                 let descText = [];
-                if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
-                if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+                if (st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+                if (st.smartGenre !== 'Разное') descText.push(st.smartGenre);
                 let displayDesc = descText.join(' • ') || 'Live TV';
 
                 el.innerHTML = `<div class="relative shrink-0"><img src="${imgSrc}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%234b5563\\' stroke-width=\\'1.5\\'%3E%3Ccircle cx=\\'12\\' cy=\\'12\\' r=\\'10\\'/%3E%3Cpath d=\\'M12 16v-4\\'/%3E%3Cpath d=\\'M12 8h.01\\'/%3E%3C/svg%3E'" class="w-10 h-10 rounded-lg object-cover bg-[#0a0a0e] border border-white/10" alt="Logo"></div><div class="flex flex-col flex-1 overflow-hidden"><div class="flex items-center justify-between pr-2"><span class="text-xs font-bold text-white truncate">${st.name}</span><span class="text-[9px] text-red-400 font-mono font-bold flex items-center gap-0.5">❤️ ${formatLikes(st.likes)}</span></div><span class="text-[10px] text-gray-400 truncate mt-0.5">${displayDesc}</span></div><div class="flex flex-col items-end shrink-0 justify-center"><button class="btn-fav text-gray-500 hover:text-red-500 hover:scale-110 transition p-1 flex items-center gap-1" onclick="toggleFavorite(event, '${st.id}')"><i data-lucide="heart" class="w-3.5 h-3.5 ${isFav ? 'text-red-500 fill-red-500' : ''}"></i></button></div>`;
@@ -1046,8 +1317,8 @@
             
             document.getElementById('player-title').innerText = st.name; 
             let descText = [];
-            if(st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
-            if(st.smartGenre !== 'Разное') descText.push(st.smartGenre);
+            if (st.countryName && st.countryName !== 'Global') descText.push(`${st.flag} ${st.countryName}`);
+            if (st.smartGenre !== 'Разное') descText.push(st.smartGenre);
             document.getElementById('player-location').innerText = descText.join(' • ') || 'Live TV Stream';
             document.getElementById('player-likes').innerText = `❤️ ${formatLikes(st.likes)}`;
             
@@ -1066,21 +1337,34 @@
         function playNextStation() { if (stationsData.length === 0) return; let idx = currentStation ? stationsData.findIndex(s => s.id === currentStation.id) : -1; let nextIndex = (idx === -1) ? 0 : (idx + 1) % stationsData.length; selectStation(stationsData[nextIndex]); }
         function playPrevStation() { if (stationsData.length === 0) return; let idx = currentStation ? stationsData.findIndex(s => s.id === currentStation.id) : -1; if (idx === -1 || idx === 0) idx = stationsData.length; let prevIndex = (idx - 1) % stationsData.length; selectStation(stationsData[prevIndex]); }
         
-        function syncVolume(val) { 
-            lastVolume = parseFloat(val); video.volume = lastVolume; 
-            const iconName = lastVolume == 0 ? 'volume-x' : 'volume-2'; 
+        function syncVolume(val, isDuckingAdjustment = false) { 
+            const parsed = parseFloat(val);
+            if (!isDuckingAdjustment) {
+                lastVolume = parsed;
+            }
+            video.volume = Math.max(0, Math.min(1, parsed)); 
+            const iconName = (video.volume == 0 || video.muted) ? 'volume-x' : 'volume-2'; 
             document.getElementById('icon-volume-desktop').setAttribute('data-lucide', iconName); lucide.createIcons(); 
         }
         
-        function toggleMute() { let newVal = video.volume > 0 ? 0 : (lastVolume || 0.8); syncVolume(newVal); document.getElementById('master-volume-desktop').value = newVal; }
+        function toggleMute() { 
+            video.muted = false;
+            document.getElementById('unmute-overlay-btn').classList.add('hidden');
+            let newVal = video.volume > 0 ? 0 : (lastVolume || 0.8); 
+            syncVolume(newVal); 
+            document.getElementById('master-volume-desktop').value = newVal; 
+        }
 
         function setupEvents() {
             document.getElementById('btn-play').onclick = togglePlay; document.getElementById('btn-next').onclick = playNextStation; document.getElementById('btn-prev').onclick = playPrevStation; 
-            document.getElementById('master-volume-desktop').addEventListener('input', e => syncVolume(e.target.value));
+            document.getElementById('master-volume-desktop').addEventListener('input', e => {
+                video.muted = false;
+                document.getElementById('unmute-overlay-btn').classList.add('hidden');
+                syncVolume(e.target.value);
+            });
             
             document.getElementById('filter-genre').addEventListener('change', (e) => triggerFilterUpdate(e, true)); 
             
-            // ПРИМЕНЕНИЕ ВЫБРАННОГО КАЧЕСТВА ИЗ СПИСКА
             document.getElementById('quality-selector').addEventListener('change', (e) => {
                 if (hlsInstance) {
                     hlsInstance.currentLevel = parseInt(e.target.value);
@@ -1091,7 +1375,7 @@
             document.getElementById('input-search').addEventListener('input', (e) => {
                 clearTimeout(searchDebounce); clearTimeout(searchPlayTimeout);
                 searchDebounce = setTimeout(() => { triggerFilterUpdate(e, false); }, 250);
-                searchPlayTimeout = setTimeout(() => { if(stationsData.length > 0) selectStation(stationsData[0]); }, 800);
+                searchPlayTimeout = setTimeout(() => { if (stationsData.length > 0) selectStation(stationsData[0]); }, 800);
             });
 
             document.addEventListener('click', (e) => {
@@ -1101,7 +1385,6 @@
                 }
             });
 
-            // Горячие клавиши для управления видео (только громкость и пауза)
             document.addEventListener('keydown', (e) => {
                 if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
                 
@@ -1110,6 +1393,7 @@
                         e.preventDefault(); resetZenTimer(); togglePlay(); break;
                     case 'ArrowUp':
                         e.preventDefault(); resetZenTimer();
+                        video.muted = false;
                         let volUp = Math.min(1, video.volume + 0.1); syncVolume(volUp);
                         document.getElementById('master-volume-desktop').value = volUp; showToast(`🔊 Громкость: ${Math.round(volUp * 100)}%`);
                         break;
@@ -1139,6 +1423,748 @@
         }
 
         function setAppHeight() { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); } window.addEventListener('resize', setAppHeight); setAppHeight();
+        
+        // =========================================================================
+        // ЯДРО СИНХРОННОГО ПЕРЕВОДА ИСКЛЮЧИТЕЛЬНО ЖИВОГО ГОЛОСА (0% ЗАГЛУШЕК, ПОЛНАЯ ТИШИНА В ПАУЗАХ)
+        // =========================================================================
+        let isAITextActive = false;
+        let isAIVoiceActive = false;
+        let speechRecognition = null;
+        let isRecognitionRunning = false;
+        let micSessionAuthorized = false;
+        let micPermissionBlocked = false;
+        window.__persistentAudioStream = null;
+
+        let isCurrentlySpeakingTTS = false;
+        let speechWatchdogTimer = null;
+        let localTtsStartVerifyTimer = null;
+        let silenceHideTimer = null;
+        let interimCommitTimer = null;
+        let committedWordCursor = 0;
+        let lastTranslatedSourceText = "";
+        const translationCache = new Map();
+
+        let ttsQueue = [];
+        let cachedVoices = [];
+        window.__activeUtterance = null;
+
+        // 1. СТРОГИЙ ФИЛЬТР ТОЛЬКО ГОЛОСА: полностью вырезает любые описания звуков, музыки, смеха, шумов и тегов
+        function extractVoiceOnly(rawText) {
+            if (!rawText) return '';
+            let text = String(rawText);
+
+            // Вырезаем любые HTML/VTT теги
+            text = text.replace(/<[^>]*>/g, ' ');
+
+            // Вырезаем все описания звуков в скобках любого типа: [Music], (Applause), {Laughter}, *Sighs*
+            text = text.replace(/\[[^\]]*\]/g, ' ');
+            text = text.replace(/\([^\)]*\)/g, ' ');
+            text = text.replace(/\{[^\}]*\}/g, ' ');
+            text = text.replace(/\*[^\*]*\*/g, ' ');
+
+            // Вырезаем нотные знаки и маркеры титров
+            text = text.replace(/[♪♫♬♩♮♯#]+/g, ' ');
+            text = text.replace(/^[\s>»\-–—]+/gm, ' ');
+
+            // Вырезаем префиксы дикторов ("ANNOUNCER:", "SPEAKER 1:", "REPORTER:")
+            text = text.replace(/^[A-ZА-ЯЁ0-9\s]{2,20}:\s*/gm, ' ');
+
+            text = text.replace(/\s+/g, ' ').trim();
+            if (!text) return '';
+
+            // Отсекаем любые отдельные описания звуков без скобок на разных языках
+            const soundDescriptionRegex = /^(music|playing music|upbeat music|dramatic music|instrumental music|applause|laughter|cheering|sigh|sighs|groan|groans|gasp|gasps|cough|coughs|silence|noise|static|inaudible|indistinct|singing|horn|bell|beep|buzz|laughs|clapping|crowd cheering|wind blowing|explosion|footsteps|doorbell|phone ringing|музыка|играет музыка|звучит музыка|фоновая музыка|аплодисменты|смех|смеются|шум|тишина|вздох|вздыхает|кашель|кашляет|гудок|звонок|пение|поет|неразборчиво|шаги|взрыв|ветер|крики|овации)[\s\.\!\?\,\-]*$/i;
+            if (soundDescriptionRegex.test(text)) {
+                return '';
+            }
+
+            // Проверяем, что в строке есть реальные слова (минимум 2 буквы любого алфавита)
+            if (!/[a-zA-Zа-яА-ЯёЁäöüßÄÖÜáéíóúñÁÉÍÓÚÑçÇğışöüĞİŞÖÜ\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]{2,}/.test(text)) {
+                return '';
+            }
+
+            return text;
+        }
+
+        // Показывает плашку субтитров ТОЛЬКО когда есть реальная речь, и скрывает её в тишине
+        function showSubtitleOverlayWithVoice(origVoiceText, translatedVoiceText) {
+            const subContainer = document.getElementById('ai-subtitles-container');
+            const origEl = document.getElementById('ai-subtitles-orig');
+            const subTextEl = document.getElementById('ai-subtitles-text');
+
+            if (!isAITextActive && !isAIVoiceActive) return;
+            if (!translatedVoiceText) return;
+
+            if (origEl) origEl.innerText = origVoiceText || '';
+            if (subTextEl) subTextEl.innerText = translatedVoiceText;
+
+            if (subContainer) {
+                subContainer.classList.remove('hidden');
+            }
+
+            // Если в течение 7 секунд после окончания фразы в эфире полная тишина — убираем плашку с экрана
+            clearTimeout(silenceHideTimer);
+            silenceHideTimer = setTimeout(() => {
+                if (!isCurrentlySpeakingTTS) {
+                    hideSubtitleOverlayInSilence();
+                }
+            }, 7000);
+        }
+
+        function hideSubtitleOverlayInSilence() {
+            clearTimeout(silenceHideTimer);
+            const subContainer = document.getElementById('ai-subtitles-container');
+            const origEl = document.getElementById('ai-subtitles-orig');
+            const subTextEl = document.getElementById('ai-subtitles-text');
+            if (origEl) origEl.innerText = '';
+            if (subTextEl) subTextEl.innerText = '';
+            if (subContainer) subContainer.classList.add('hidden');
+        }
+
+        function initFemaleVoiceEngine() {
+            if (!('speechSynthesis' in window)) return;
+
+            const loadVoices = () => {
+                cachedVoices = window.speechSynthesis.getVoices() || [];
+                const bestRu = getBestFemaleVoice('ru-RU');
+                const badge = document.getElementById('detected-voice-badge');
+                if (badge) {
+                    if (bestRu) {
+                        const cleanName = bestRu.name.replace(/Microsoft |Google |Apple |Desktop /gi, '').split(' ')[0];
+                        badge.innerText = `👩 ${cleanName}`;
+                    } else {
+                        badge.innerText = `👩 Облачный RU`;
+                    }
+                }
+            };
+
+            loadVoices();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+            }
+        }
+
+        function getBestFemaleVoice(targetLang = 'ru-RU') {
+            if (!('speechSynthesis' in window)) return null;
+            if (!cachedVoices || cachedVoices.length === 0) {
+                cachedVoices = window.speechSynthesis.getVoices() || [];
+            }
+
+            const langPrefix = targetLang.split('-')[0].toLowerCase();
+            const matchingVoices = cachedVoices.filter(v => {
+                const vLang = (v.lang || '').toLowerCase();
+                const vName = (v.name || '').toLowerCase();
+                return vLang.startsWith(langPrefix) || (langPrefix === 'ru' && (vName.includes('русск') || vName.includes('russian')));
+            });
+
+            if (matchingVoices.length === 0) return null;
+
+            const femaleKeywords = ['irina', 'ирина', 'svetlana', 'светлана', 'milena', 'милена', 'katya', 'катя', 'tatyana', 'татьяна', 'elena', 'елена', 'dariya', 'дарья', 'alyona', 'алена', 'marina', 'марина', 'natalia', 'наталья', 'google русский', 'google russian', 'female', 'женский', 'zira', 'samantha', 'victoria', 'paulina', 'monica', 'helena', 'hedda', 'katja', 'hortense', 'amelie', 'alice', 'elsa', 'kyoko', 'yuna', 'huihui', 'yaoyao'];
+            const maleKeywords = ['pavel', 'павел', 'dmitry', 'дмитрий', 'yuri', 'юрий', 'maxim', 'максим', 'aleksandr', 'александр', 'artem', 'артем', 'boris', 'борис', 'male', 'мужской', 'david', 'mark', 'stefan', 'paul', 'daniel'];
+
+            let bestVoice = null;
+            let bestScore = -999;
+
+            for (const voice of matchingVoices) {
+                const nameLower = voice.name.toLowerCase();
+                let score = 0;
+
+                if (maleKeywords.some(m => nameLower.includes(m))) {
+                    score -= 100;
+                }
+
+                femaleKeywords.forEach((f, idx) => {
+                    if (nameLower.includes(f)) {
+                        score += (60 - idx);
+                    }
+                });
+
+                if (nameLower.includes('natural') || nameLower.includes('online') || nameLower.includes('google')) {
+                    score += 25;
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestVoice = voice;
+                }
+            }
+
+            if (bestScore < 0) return null;
+            return bestVoice || matchingVoices[0];
+        }
+
+        function getChannelSourceLanguage() {
+            const manualSelector = document.getElementById('ai-source-lang-selector');
+            if (manualSelector && manualSelector.value !== 'auto') {
+                return manualSelector.value;
+            }
+            if (currentStation && currentStation.country) {
+                const cCode = currentStation.country.toUpperCase();
+                if (COUNTRY_TO_LANG_MAP[cCode]) {
+                    return COUNTRY_TO_LANG_MAP[cCode];
+                }
+            }
+            return 'en-US';
+        }
+
+        function updateChannelLanguagePairUI() {
+            const srcLang = getChannelSourceLanguage().split('-')[0].toUpperCase();
+            const tgtLang = (document.getElementById('ai-lang-selector').value || 'ru-RU').split('-')[0].toUpperCase();
+            const pairEl = document.getElementById('ai-sub-lang-pair');
+            if (pairEl) {
+                const flag = currentStation ? currentStation.flag : '🌍';
+                pairEl.innerText = `${flag} ${srcLang} ➔ ${tgtLang}`;
+            }
+        }
+
+        // Многоступенчатый нейропереводчик исключительно человеческого голоса
+        async function translateTextToTarget(text, targetLangBcp47 = 'ru-RU', sourceLangBcp47 = 'auto') {
+            const cleanText = extractVoiceOnly(text);
+            if (!cleanText) return '';
+
+            const tl = targetLangBcp47.split('-')[0].toLowerCase();
+            const sl = sourceLangBcp47 === 'auto' ? 'auto' : sourceLangBcp47.split('-')[0].toLowerCase();
+
+            const hasRussianCyrillic = /[а-яА-ЯёЁ]{3,}/.test(cleanText);
+            const hasNonRussianCyrillic = /[іїєґІЇЄҐђјљњћџЂЈЉЊЋЏўЎ]/.test(cleanText);
+            if (tl === 'ru' && sl === 'ru' && hasRussianCyrillic && !hasNonRussianCyrillic) {
+                return cleanText;
+            }
+
+            const cacheKey = `${sl}_${tl}_${cleanText}`;
+            if (translationCache.has(cacheKey)) {
+                return translationCache.get(cacheKey);
+            }
+
+            // Канал 1: Google Translate GTX
+            try {
+                const url1 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(cleanText)}`;
+                const res1 = await fetch(url1);
+                if (res1.ok) {
+                    const data1 = await res1.json();
+                    if (Array.isArray(data1) && Array.isArray(data1[0])) {
+                        const rawTranslated1 = data1[0].map(part => part[0]).join('').trim();
+                        const translated1 = extractVoiceOnly(rawTranslated1);
+                        if (translated1) {
+                            if (translationCache.size > 300) translationCache.clear();
+                            translationCache.set(cacheKey, translated1);
+                            return translated1;
+                        }
+                    }
+                }
+            } catch (e1) {}
+
+            // Канал 2: Google Clients5 Dictionary API
+            try {
+                const url2 = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${encodeURIComponent(tl)}&q=${encodeURIComponent(cleanText)}`;
+                const res2 = await fetch(url2);
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    let rawTranslated2 = '';
+                    if (Array.isArray(data2)) {
+                        rawTranslated2 = Array.isArray(data2[0]) ? data2[0][0] : data2[0];
+                    } else if (data2 && data2.sentences) {
+                        rawTranslated2 = data2.sentences.map(s => s.trans || '').join('');
+                    }
+                    const translated2 = extractVoiceOnly(rawTranslated2);
+                    if (translated2) {
+                        translationCache.set(cacheKey, translated2);
+                        return translated2;
+                    }
+                }
+            } catch (e2) {}
+
+            // Канал 3: MyMemory API
+            try {
+                const srcPair = (sl === 'auto' || sl === tl) ? 'en' : sl;
+                const url3 = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${srcPair}|${tl}`;
+                const res3 = await fetch(url3);
+                if (res3.ok) {
+                    const data3 = await res3.json();
+                    if (data3 && data3.responseData && data3.responseData.translatedText) {
+                        const translated3 = extractVoiceOnly(data3.responseData.translatedText);
+                        if (translated3) {
+                            translationCache.set(cacheKey, translated3);
+                            return translated3;
+                        }
+                    }
+                }
+            } catch (e3) {}
+
+            return '';
+        }
+
+        function syncTranslatorButtonsUI() {
+            const btnText = document.getElementById('btn-ai-text');
+            const knobText = document.getElementById('ai-text-knob');
+            const btnVoice = document.getElementById('btn-ai-voice');
+            const knobVoice = document.getElementById('ai-voice-knob');
+
+            const quickSub = document.getElementById('btn-quick-sub');
+            const quickVoice = document.getElementById('btn-quick-voice');
+            const quickSubMob = document.getElementById('btn-quick-sub-mob');
+            const quickVoiceMob = document.getElementById('btn-quick-voice-mob');
+
+            if (isAITextActive) {
+                btnText.classList.replace('bg-gray-600', 'bg-blue-600');
+                knobText.classList.add('translate-x-4');
+                if (quickSub) quickSub.className = "bg-blue-600/30 border border-blue-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.5)]";
+                if (quickSubMob) quickSubMob.className = "bg-blue-600/30 border border-blue-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition";
+            } else {
+                btnText.classList.replace('bg-blue-600', 'bg-gray-600');
+                knobText.classList.remove('translate-x-4');
+                if (quickSub) quickSub.className = "bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0";
+                if (quickSubMob) quickSubMob.className = "bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition";
+            }
+
+            if (isAIVoiceActive) {
+                btnVoice.classList.replace('bg-gray-600', 'bg-pink-600');
+                knobVoice.classList.add('translate-x-4');
+                if (quickVoice) quickVoice.className = "bg-pink-600/30 border border-pink-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-[0_0_15px_rgba(236,72,153,0.5)]";
+                if (quickVoiceMob) quickVoiceMob.className = "bg-pink-600/30 border border-pink-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-bold flex items-center gap-1 transition";
+            } else {
+                btnVoice.classList.replace('bg-pink-600', 'bg-gray-600');
+                knobVoice.classList.remove('translate-x-4');
+                if (quickVoice) quickVoice.className = "bg-[#15151a] hover:bg-white/10 active:scale-95 text-gray-300 px-3 py-2 rounded-xl border border-white/10 text-xs font-bold transition flex items-center gap-1.5 shrink-0";
+                if (quickVoiceMob) quickVoiceMob.className = "bg-[#15151a] text-gray-300 px-2.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-bold flex items-center gap-1 transition";
+            }
+
+            if (isAITextActive || isAIVoiceActive) {
+                updateChannelLanguagePairUI();
+            } else {
+                hideSubtitleOverlayInSilence();
+            }
+            applySubtitles();
+        }
+
+        function toggleAIText() {
+            isAITextActive = !isAITextActive;
+            syncTranslatorButtonsUI();
+
+            if (isAITextActive) {
+                lastTranslatedSourceText = "";
+                committedWordCursor = 0;
+                showToast("🇷🇺 Перевод живого голоса в субтитры включен");
+                restartLiveTranslationPipeline();
+            } else {
+                showToast("ИИ-субтитры выключены");
+                checkAndStopTranslation();
+            }
+        }
+
+        function toggleAIVoice() {
+            isAIVoiceActive = !isAIVoiceActive;
+            if (isAIVoiceActive && !isAITextActive) {
+                isAITextActive = true;
+            }
+            syncTranslatorButtonsUI();
+
+            if (isAIVoiceActive) {
+                video.muted = false;
+                document.getElementById('unmute-overlay-btn').classList.add('hidden');
+                initFemaleVoiceEngine();
+                lastTranslatedSourceText = "";
+                committedWordCursor = 0;
+                showToast("👩 Русская женская озвучка голоса включена");
+                restartLiveTranslationPipeline();
+            } else {
+                clearSpeechQueue();
+                syncVolume(lastVolume);
+                document.getElementById('master-volume-desktop').value = lastVolume;
+                showToast("Голосовая озвучка выключена");
+                checkAndStopTranslation();
+            }
+        }
+
+        function checkAndStopTranslation() {
+            if (!isAITextActive && !isAIVoiceActive) {
+                clearTimeout(interimCommitTimer);
+                hideSubtitleOverlayInSilence();
+                clearSpeechQueue();
+            }
+        }
+
+        function restartLiveTranslationPipeline() {
+            if (!isAITextActive && !isAIVoiceActive) return;
+
+            updateChannelLanguagePairUI();
+            applySubtitles();
+            attachTextTrackListeners();
+            ensureSingleSessionSpeechRecognition();
+        }
+
+        function attachTextTrackListeners() {
+            if (!video.textTracks) return false;
+            let foundTrack = false;
+
+            for (let i = 0; i < video.textTracks.length; i++) {
+                const track = video.textTracks[i];
+                if (track.kind === 'subtitles' || track.kind === 'captions' || track.kind === 'metadata') {
+                    foundTrack = true;
+                    track.mode = 'showing';
+                    track.oncuechange = function() {
+                        if (!isAITextActive && !isAIVoiceActive) return;
+                        const activeCues = track.activeCues;
+                        if (activeCues && activeCues.length > 0) {
+                            const cueText = activeCues[activeCues.length - 1].text;
+                            const voiceOnly = extractVoiceOnly(cueText);
+                            if (voiceOnly.length > 1) {
+                                setSubtitleSourceBadge("📝 ГОЛОС (СУБТИТРЫ)");
+                                handleIncomingForeignPhrase(voiceOnly);
+                            }
+                        }
+                    };
+                }
+            }
+            return foundTrack;
+        }
+
+        // Запрашивает микрофон ровно 1 раз за сессию и удерживает поток при переключении каналов
+        async function ensureSingleSessionSpeechRecognition() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec || micPermissionBlocked) return;
+
+            if (!micSessionAuthorized) {
+                try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        window.__persistentAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    }
+                    micSessionAuthorized = true;
+                } catch (e) {
+                    micPermissionBlocked = true;
+                    return;
+                }
+            }
+
+            if (speechRecognition) {
+                if (!isRecognitionRunning) {
+                    try {
+                        speechRecognition.lang = getChannelSourceLanguage();
+                        speechRecognition.start();
+                    } catch (e) {}
+                }
+                return;
+            }
+
+            try {
+                speechRecognition = new SpeechRec();
+                speechRecognition.lang = getChannelSourceLanguage();
+                speechRecognition.continuous = true;
+                speechRecognition.interimResults = true;
+                speechRecognition.maxAlternatives = 1;
+
+                speechRecognition.onstart = () => {
+                    isRecognitionRunning = true;
+                };
+
+                speechRecognition.onresult = (event) => {
+                    if (!isAITextActive && !isAIVoiceActive) return;
+
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript + ' ';
+                        } else {
+                            interimTranscript += transcript + ' ';
+                        }
+                    }
+
+                    const srcPrefix = getChannelSourceLanguage().split('-')[0].toLowerCase();
+
+                    // Переводим непрерывную речь на лету каждые 6 слов без ожидания длинной паузы
+                    if (interimTranscript.trim().length > 1) {
+                        const cleanInterim = extractVoiceOnly(interimTranscript);
+                        // Не переводим собственный русский голос переводчицы на иностранном канале
+                        if (srcPrefix !== 'ru' && /[а-яА-ЯёЁ]{4,}/.test(cleanInterim)) {
+                            return;
+                        }
+                        if (cleanInterim) {
+                            const words = cleanInterim.split(/\s+/).filter(Boolean);
+                            if (words.length < committedWordCursor) {
+                                committedWordCursor = 0;
+                            }
+                            const newWords = words.slice(committedWordCursor);
+                            if (newWords.length >= 6) {
+                                const chunk = newWords.slice(0, 6).join(' ');
+                                committedWordCursor += 6;
+                                setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
+                                handleIncomingForeignPhrase(chunk);
+                            }
+
+                            clearTimeout(interimCommitTimer);
+                            interimCommitTimer = setTimeout(() => {
+                                const curWords = cleanInterim.split(/\s+/).filter(Boolean);
+                                if (curWords.length > committedWordCursor) {
+                                    const tail = curWords.slice(committedWordCursor).join(' ');
+                                    committedWordCursor = curWords.length;
+                                    if (tail.trim().length > 1) {
+                                        setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
+                                        handleIncomingForeignPhrase(tail.trim());
+                                    }
+                                }
+                            }, 850);
+                        }
+                    }
+
+                    if (finalTranscript.trim().length > 1) {
+                        clearTimeout(interimCommitTimer);
+                        const cleanFinal = extractVoiceOnly(finalTranscript);
+                        if (srcPrefix !== 'ru' && /[а-яА-ЯёЁ]{4,}/.test(cleanFinal)) {
+                            committedWordCursor = 0;
+                            return;
+                        }
+                        if (cleanFinal) {
+                            const words = cleanFinal.split(/\s+/).filter(Boolean);
+                            const remaining = words.slice(committedWordCursor).join(' ');
+                            committedWordCursor = 0;
+                            if (remaining.trim().length > 1) {
+                                setSubtitleSourceBadge("🎙️ ГОЛОС ЭФИРА");
+                                handleIncomingForeignPhrase(remaining.trim());
+                            }
+                        } else {
+                            committedWordCursor = 0;
+                        }
+                    }
+                };
+
+                speechRecognition.onerror = (event) => {
+                    isRecognitionRunning = false;
+                    if (event && (event.error === 'not-allowed' || event.error === 'service-not-allowed')) {
+                        micPermissionBlocked = true;
+                    }
+                };
+
+                speechRecognition.onend = () => {
+                    isRecognitionRunning = false;
+                    committedWordCursor = 0;
+                    if (micSessionAuthorized && !micPermissionBlocked && (isAITextActive || isAIVoiceActive) && isPlaying) {
+                        setTimeout(() => {
+                            try {
+                                if ((isAITextActive || isAIVoiceActive) && speechRecognition && !isRecognitionRunning) {
+                                    speechRecognition.lang = getChannelSourceLanguage();
+                                    speechRecognition.start();
+                                }
+                            } catch (e) {}
+                        }, 500);
+                    }
+                };
+
+                speechRecognition.start();
+            } catch (e) {
+                isRecognitionRunning = false;
+            }
+        }
+
+        function setSubtitleSourceBadge(label) {
+            const badge = document.getElementById('ai-sub-badge');
+            if (badge) badge.innerText = label;
+        }
+
+        async function handleIncomingForeignPhrase(originalText, forcedSourceLang = null) {
+            if (!isAITextActive && !isAIVoiceActive) return;
+
+            const cleanOrigVoice = extractVoiceOnly(originalText);
+            if (!cleanOrigVoice || cleanOrigVoice === lastTranslatedSourceText) return;
+            lastTranslatedSourceText = cleanOrigVoice;
+
+            const sourceLang = forcedSourceLang || getChannelSourceLanguage();
+            const targetLang = document.getElementById('ai-lang-selector').value || 'ru-RU';
+
+            const translatedText = await translateTextToTarget(cleanOrigVoice, targetLang, sourceLang);
+            const cleanTranslatedVoice = extractVoiceOnly(translatedText);
+            if (!cleanTranslatedVoice) return;
+
+            if (isAITextActive) {
+                showSubtitleOverlayWithVoice(cleanOrigVoice, cleanTranslatedVoice);
+            }
+
+            if (isAIVoiceActive) {
+                enqueueFemaleVoiceover(cleanTranslatedVoice, targetLang);
+            }
+        }
+
+        function enqueueFemaleVoiceover(text, lang = 'ru-RU') {
+            if (!isAIVoiceActive || !text) return;
+
+            if (ttsQueue.length >= 2) {
+                ttsQueue.shift();
+            }
+            ttsQueue.push({ text, lang });
+
+            if (!isCurrentlySpeakingTTS) {
+                processNextInSpeechQueue();
+            }
+        }
+
+        function clearSpeechQueue() {
+            ttsQueue = [];
+            isCurrentlySpeakingTTS = false;
+            clearTimeout(speechWatchdogTimer);
+            clearTimeout(localTtsStartVerifyTimer);
+            window.__activeUtterance = null;
+            if ('speechSynthesis' in window) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
+            const cloudPlayer = document.getElementById('cloud-tts-player');
+            if (cloudPlayer) {
+                try { cloudPlayer.pause(); } catch (e) {}
+            }
+            setVoiceSpeakingIndicator(false);
+            if (!video.paused) {
+                syncVolume(lastVolume, true);
+            }
+        }
+
+        function setVoiceSpeakingIndicator(speaking) {
+            const ind = document.getElementById('ai-voice-indicator');
+            if (!ind) return;
+            if (speaking) {
+                ind.classList.remove('hidden');
+                ind.classList.add('inline-flex', 'speaking');
+            } else {
+                ind.classList.add('hidden');
+                ind.classList.remove('inline-flex', 'speaking');
+            }
+        }
+
+        function advanceSpeechQueue() {
+            clearTimeout(speechWatchdogTimer);
+            clearTimeout(localTtsStartVerifyTimer);
+            setTimeout(processNextInSpeechQueue, 80);
+        }
+
+        function processNextInSpeechQueue() {
+            clearTimeout(speechWatchdogTimer);
+            clearTimeout(localTtsStartVerifyTimer);
+
+            if (!isAIVoiceActive || ttsQueue.length === 0) {
+                isCurrentlySpeakingTTS = false;
+                setVoiceSpeakingIndicator(false);
+                syncVolume(lastVolume, true);
+                return;
+            }
+
+            isCurrentlySpeakingTTS = true;
+            const item = ttsQueue.shift();
+
+            // Приглушаем оригинальный звук телеканала до 18% только на время речи переводчицы
+            const duckedVolume = Math.max(0.06, lastVolume * 0.18);
+            syncVolume(duckedVolume, true);
+            setVoiceSpeakingIndicator(true);
+
+            speechWatchdogTimer = setTimeout(() => {
+                advanceSpeechQueue();
+            }, 10500);
+
+            const femaleVoice = getBestFemaleVoice(item.lang);
+
+            if ('speechSynthesis' in window && femaleVoice) {
+                try {
+                    window.speechSynthesis.resume();
+
+                    let hasStartedSpeaking = false;
+                    const utterance = new SpeechSynthesisUtterance(item.text);
+                    window.__activeUtterance = utterance;
+                    utterance.voice = femaleVoice;
+                    utterance.lang = item.lang;
+                    utterance.pitch = 1.14;
+                    utterance.rate = 1.12;
+                    utterance.volume = 1.0;
+
+                    utterance.onstart = () => {
+                        hasStartedSpeaking = true;
+                        clearTimeout(localTtsStartVerifyTimer);
+                    };
+
+                    utterance.onend = () => {
+                        clearTimeout(localTtsStartVerifyTimer);
+                        advanceSpeechQueue();
+                    };
+
+                    utterance.onerror = () => {
+                        clearTimeout(localTtsStartVerifyTimer);
+                        playCloudFemaleTTSFallback(item.text, item.lang);
+                    };
+
+                    localTtsStartVerifyTimer = setTimeout(() => {
+                        if (!hasStartedSpeaking) {
+                            try { window.speechSynthesis.cancel(); } catch (e) {}
+                            playCloudFemaleTTSFallback(item.text, item.lang);
+                        }
+                    }, 1000);
+
+                    window.speechSynthesis.speak(utterance);
+                    return;
+                } catch (e) {
+                    playCloudFemaleTTSFallback(item.text, item.lang);
+                    return;
+                }
+            }
+
+            playCloudFemaleTTSFallback(item.text, item.lang);
+        }
+
+        function playCloudFemaleTTSFallback(text, lang = 'ru-RU') {
+            const cloudPlayer = document.getElementById('cloud-tts-player');
+            if (!cloudPlayer) {
+                advanceSpeechQueue();
+                return;
+            }
+
+            try {
+                const tl = lang.split('-')[0].toLowerCase();
+                const shortText = text.substring(0, 180);
+
+                cloudPlayer.src = `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(shortText)}&tl=${tl}&client=gtx`;
+                cloudPlayer.playbackRate = 1.12;
+
+                cloudPlayer.onended = () => {
+                    advanceSpeechQueue();
+                };
+
+                cloudPlayer.onerror = () => {
+                    cloudPlayer.onerror = () => {
+                        advanceSpeechQueue();
+                    };
+                    cloudPlayer.src = `https://api.streamelements.com/kappa/v2/speech?voice=Tatyana&text=${encodeURIComponent(shortText)}`;
+                    cloudPlayer.play().catch(() => {
+                        advanceSpeechQueue();
+                    });
+                };
+
+                cloudPlayer.play().catch(() => {
+                    advanceSpeechQueue();
+                });
+            } catch (e) {
+                advanceSpeechQueue();
+            }
+        }
+
+        document.getElementById('ai-lang-selector').addEventListener('change', () => {
+            lastTranslatedSourceText = "";
+            updateChannelLanguagePairUI();
+            initFemaleVoiceEngine();
+            if (isAITextActive || isAIVoiceActive) {
+                showToast("Язык перевода обновлён");
+                restartLiveTranslationPipeline();
+            }
+        });
+
+        document.getElementById('ai-source-lang-selector').addEventListener('change', () => {
+            lastTranslatedSourceText = "";
+            committedWordCursor = 0;
+            updateChannelLanguagePairUI();
+            if (speechRecognition && isRecognitionRunning) {
+                try { speechRecognition.lang = getChannelSourceLanguage(); } catch (e) {}
+            }
+            if (isAITextActive || isAIVoiceActive) {
+                showToast("Исходный язык канала обновлён");
+                restartLiveTranslationPipeline();
+            }
+        });
     </script>
 </body>
 </html>
